@@ -40,22 +40,37 @@
     </aside>
 
     <section class="posts-panel">
-      <div class="search-bar">
-        <select id="searchType">
-          <option value="text">Buscar por texto</option>
-          <option value="id">Buscar por ID</option>
-        </select>
 
-        <input id="searchInput" type="text" placeholder="Buscar post">
+      <div id="listView">
+        <div class="search-bar">
+          <select id="searchType">
+            <option value="text">Buscar por texto</option>
+            <option value="id">Buscar por ID</option>
+          </select>
 
-        <button id="searchBtn" type="button">Buscar</button>
-        <button id="clearBtn" type="button">Mostrar todos</button>
+          <input id="searchInput" type="text" placeholder="Buscar post">
+
+          <button id="searchBtn" type="button">Buscar</button>
+          <button id="clearBtn" type="button">Mostrar todos</button>
+        </div>
+
+        <div class="posts-wrapper">
+          <div id="uiState" class="ui-state"></div>
+          <div id="postsContainer" class="posts-container"></div>
+        </div>
       </div>
 
-      <div class="posts-wrapper">
-        <div id="uiState" class="ui-state"></div>
-        <div id="postsContainer" class="posts-container"></div>
+      <div id="detailView" class="hidden">
+        <button id="backToPostsBtn" type="button" class="back-btn">← Volver</button>
+
+        <div class="detail-card">
+          <p id="detailMeta" class="detail-meta"></p>
+          <h2 id="detailTitle" class="detail-title"></h2>
+          <p id="detailAuthor" class="detail-author"></p>
+          <p id="detailBody" class="detail-body"></p>
+        </div>
       </div>
+
     </section>
 
   </div>
