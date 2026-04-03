@@ -232,3 +232,72 @@ padding:20px;
 .ui-state.visible{
 display:flex;
 }
+
+.post-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-bottom:12px;
+}
+
+.post-avatar{
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  object-fit:cover;
+  flex-shrink:0;
+}
+
+.post-author-box{
+  display:flex;
+  flex-direction:column;
+}
+
+.post-author{
+  font-weight:700;
+  font-size:15px;
+  color:#111827;
+  margin-bottom:2px;
+}
+
+.post-username{
+  font-size:13px;
+  color:#6b7280;
+}
+
+.post-title{
+  font-size:15px;
+  font-weight:700;
+  color:#1f2937;
+  margin-bottom:8px;
+}
+
+.post-body{
+  font-size:14px;
+  line-height:1.5;
+  color:#374151;
+  white-space:pre-wrap;
+}
+.post-toggle-btn{
+  background:none;
+  border:none;
+  padding:0;
+  margin-top:10px;
+  color:#2563eb;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  align-self:flex-start;
+  border-radius:0;
+  transition:none;
+}
+
+.post-toggle-btn:hover{
+  background:none;
+  transform:none;
+  text-decoration:underline;
+}
+
+.post-toggle-btn:active{
+  transform:none;
+}

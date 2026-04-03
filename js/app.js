@@ -13,6 +13,8 @@ const postInput = document.getElementById("postInput");
 const publishBtn = document.getElementById("publishBtn");
 const createFeedback = document.getElementById("createFeedback");
 
+const POST_PREVIEW_LIMIT = 160;
+
 let localPosts = [];
 let searchActive = false;
 
@@ -27,10 +29,17 @@ function clearState() {
   uiState.classList.remove("visible");
 }
 
-function normalizeApiPost(post) {
+function normalizeApiPost(post, usersMap) {
+  const user = usersMap[post.userId];
+
   return {
     id: post.id,
-    author: "Usuario " + post.userId,
+    title: post.title,
+    author: user
+      ? `${user.firstName} ${user.lastName}`
+      : `Usuario ${post.userId}`,
+    username: user ? `@${user.username}` : `@user${post.userId}`,
+    avatar: user ? user.image : "",
     body: post.body
   };
 }
@@ -49,15 +58,63 @@ function renderPosts(posts) {
     const card = document.createElement("div");
     card.className = "post-card";
 
+    const header = document.createElement("div");
+    header.className = "post-header";
+
+    const avatar = document.createElement("img");
+    avatar.className = "post-avatar";
+    avatar.src = post.avatar || "https://dummyjson.com/icon/user/80";
+    avatar.alt = `Foto de ${post.author}`;
+
+    const authorBox = document.createElement("div");
+    authorBox.className = "post-author-box";
+
     const author = document.createElement("div");
     author.className = "post-author";
     author.textContent = post.author;
 
+    const username = document.createElement("div");
+    username.className = "post-username";
+    username.textContent = post.username || "";
+
     const message = document.createElement("div");
+    message.className = "post-body";
     message.textContent = post.body;
 
-    card.appendChild(author);
+    const fullBody = post.body || "";
+    const shouldTruncate = fullBody.length > POST_PREVIEW_LIMIT;
+    const previewText = shouldTruncate
+      ? fullBody.slice(0, POST_PREVIEW_LIMIT).trim() + "..."
+      : fullBody;
+
+    message.textContent = previewText;
+
+    authorBox.appendChild(author);
+    authorBox.appendChild(username);
+
+    header.appendChild(avatar);
+    header.appendChild(authorBox);
+
+    card.appendChild(header);
     card.appendChild(message);
+
+    if (shouldTruncate) {
+      const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
+      toggleBtn.className = "post-toggle-btn";
+      toggleBtn.textContent = "Ver más";
+
+      let expanded = false;
+
+      toggleBtn.addEventListener("click", () => {
+        expanded = !expanded;
+
+        message.textContent = expanded ? fullBody : previewText;
+        toggleBtn.textContent = expanded ? "Ver menos" : "Ver más";
+      });
+
+      card.appendChild(toggleBtn);
+    }
 
     postsContainer.appendChild(card);
   });
@@ -68,14 +125,24 @@ async function loadPosts() {
   showState("Cargando posts...");
 
   try {
-    const response = await fetch(API);
+    const [postsResponse, usersResponse] = await Promise.all([
+      fetch(API),
+      fetch("https://dummyjson.com/users?limit=0")
+    ]);
 
-    if (!response.ok) {
-      throw new Error("Error al cargar posts");
+    if (!postsResponse.ok || !usersResponse.ok) {
+      throw new Error("Error al cargar datos");
     }
 
-    const data = await response.json();
-    const apiPosts = data.posts.map(normalizeApiPost);
+    const postsData = await postsResponse.json();
+    const usersData = await usersResponse.json();
+
+    const usersMap = {};
+    usersData.users.forEach(user => {
+      usersMap[user.id] = user;
+    });
+
+    const apiPosts = postsData.posts.map(post => normalizeApiPost(post, usersMap));
 
     renderPosts([...localPosts, ...apiPosts]);
   } catch (error) {
@@ -97,6 +164,18 @@ async function searchPosts() {
   showState("Buscando...");
 
   try {
+    const usersResponse = await fetch("https://dummyjson.com/users?limit=0");
+
+    if (!usersResponse.ok) {
+      throw new Error("Error cargando usuarios");
+    }
+
+    const usersData = await usersResponse.json();
+    const usersMap = {};
+    usersData.users.forEach(user => {
+      usersMap[user.id] = user;
+    });
+
     if (type === "id") {
       const res = await fetch(`${API}/${encodeURIComponent(value)}`);
 
@@ -111,11 +190,7 @@ async function searchPosts() {
         localPost => String(localPost.id) === value
       );
 
-      const apiMatch = {
-        id: post.id,
-        author: "Usuario " + post.userId,
-        body: post.body
-      };
+      const apiMatch = normalizeApiPost(post, usersMap);
 
       renderPosts([...localMatches, apiMatch]);
       return;
@@ -128,8 +203,7 @@ async function searchPosts() {
     }
 
     const data = await res.json();
-
-    const apiResults = data.posts.map(normalizeApiPost);
+    const apiResults = data.posts.map(post => normalizeApiPost(post, usersMap));
 
     const localResults = localPosts.filter(post =>
       post.author.toLowerCase().includes(value.toLowerCase()) ||
