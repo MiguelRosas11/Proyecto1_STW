@@ -200,6 +200,13 @@ gap:14px;
 padding-right:6px;
 }
 
+
+.posts-panel{
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+  height:100%;
+}
 /* CARD DE POST */
 
 .post-card{
@@ -300,4 +307,21 @@ display:flex;
 
 .post-toggle-btn:active{
   transform:none;
+}
+
+.view-section{
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  min-height:0;
+}
+
+.posts-wrapper{
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+}
+
+.hidden{
+  display:none !important;
 }

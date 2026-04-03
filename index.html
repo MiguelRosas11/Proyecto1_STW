@@ -41,7 +41,7 @@
 
     <section class="posts-panel">
 
-      <div id="listView">
+      <div id="listView" class="view-section">
         <div class="search-bar">
           <select id="searchType">
             <option value="text">Buscar por texto</option>
@@ -60,12 +60,26 @@
         </div>
       </div>
 
-      <div id="detailView" class="hidden">
+      <div id="detailView" class="view-section hidden">
         <button id="backToPostsBtn" type="button" class="back-btn">← Volver</button>
 
         <div class="detail-card">
           <p id="detailMeta" class="detail-meta"></p>
-          <p id="detailAuthor" class="detail-author"></p>
+
+          <div class="detail-user">
+            <img
+              id="detailAvatar"
+              class="detail-avatar"
+              src=""
+              alt="Foto de perfil"
+            >
+
+            <div class="detail-user-info">
+              <p id="detailAuthor" class="detail-author"></p>
+              <p id="detailUsername" class="detail-username"></p>
+            </div>
+          </div>
+
           <p id="detailBody" class="detail-body"></p>
         </div>
       </div>

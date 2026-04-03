@@ -1,4 +1,6 @@
 const API = "https://dummyjson.com/posts";
+const DEFAULT_AVATAR = "https://dummyjson.com/icon/user/80";
+const POST_PREVIEW_LIMIT = 160;
 
 const postsContainer = document.getElementById("postsContainer");
 const uiState = document.getElementById("uiState");
@@ -18,10 +20,10 @@ const detailView = document.getElementById("detailView");
 const backToPostsBtn = document.getElementById("backToPostsBtn");
 
 const detailMeta = document.getElementById("detailMeta");
+const detailAvatar = document.getElementById("detailAvatar");
 const detailAuthor = document.getElementById("detailAuthor");
+const detailUsername = document.getElementById("detailUsername");
 const detailBody = document.getElementById("detailBody");
-
-const POST_PREVIEW_LIMIT = 160;
 
 let localPosts = [];
 let searchActive = false;
@@ -48,21 +50,43 @@ function normalizeApiPost(post, usersMap) {
     username: user
       ? `@${user.username}`
       : `@user${post.userId}`,
-    avatar: user?.image || "https://dummyjson.com/icon/user/80",
+    avatar: user?.image || DEFAULT_AVATAR,
     body: post.body || ""
   };
 }
 
 function openDetail(post) {
+  if (
+    !listView ||
+    !detailView ||
+    !detailMeta ||
+    !detailAvatar ||
+    !detailAuthor ||
+    !detailUsername ||
+    !detailBody
+  ) {
+    console.error("Faltan elementos del detail view en el HTML");
+    return;
+  }
+
   detailMeta.textContent = `Post #${post.id}`;
-  detailAvatar.src = post.avatar || "https://dummyjson.com/icon/user/80";
+  detailAvatar.src = post.avatar || DEFAULT_AVATAR;
   detailAvatar.alt = `Foto de ${post.author}`;
   detailAuthor.textContent = post.author;
   detailUsername.textContent = post.username || "";
-  detailBody.textContent = post.body;
+  detailBody.textContent = post.body || "";
 
   listView.classList.add("hidden");
   detailView.classList.remove("hidden");
+}
+
+function closeDetail() {
+  if (!listView || !detailView) {
+    return;
+  }
+
+  detailView.classList.add("hidden");
+  listView.classList.remove("hidden");
 }
 
 function renderPosts(posts) {
@@ -77,14 +101,14 @@ function renderPosts(posts) {
 
   posts.forEach(post => {
     const card = document.createElement("div");
-    card.className = "post-card";
+    card.className = "post-card clickable-post";
 
     const header = document.createElement("div");
     header.className = "post-header";
 
     const avatar = document.createElement("img");
     avatar.className = "post-avatar";
-    avatar.src = post.avatar || "https://dummyjson.com/icon/user/80";
+    avatar.src = post.avatar || DEFAULT_AVATAR;
     avatar.alt = `Foto de ${post.author}`;
 
     const authorBox = document.createElement("div");
@@ -100,7 +124,6 @@ function renderPosts(posts) {
 
     const message = document.createElement("div");
     message.className = "post-body";
-    message.textContent = post.body;
 
     const fullBody = post.body || "";
     const shouldTruncate = fullBody.length > POST_PREVIEW_LIMIT;
@@ -125,20 +148,37 @@ function renderPosts(posts) {
       toggleBtn.className = "post-toggle-btn";
       toggleBtn.textContent = "Ver más";
 
-      let expanded = false;
-
-      toggleBtn.addEventListener("click", () => {
-        expanded = !expanded;
-
-        message.textContent = expanded ? fullBody : previewText;
-        toggleBtn.textContent = expanded ? "Ver menos" : "Ver más";
+      toggleBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        openDetail(post);
       });
 
       card.appendChild(toggleBtn);
     }
 
+    card.addEventListener("click", () => {
+      openDetail(post);
+    });
+
     postsContainer.appendChild(card);
   });
+}
+
+async function buildUsersMap() {
+  const usersResponse = await fetch("https://dummyjson.com/users?limit=0");
+
+  if (!usersResponse.ok) {
+    throw new Error("Error cargando usuarios");
+  }
+
+  const usersData = await usersResponse.json();
+  const usersMap = {};
+
+  usersData.users.forEach(user => {
+    usersMap[user.id] = user;
+  });
+
+  return usersMap;
 }
 
 async function loadPosts() {
@@ -146,23 +186,16 @@ async function loadPosts() {
   showState("Cargando posts...");
 
   try {
-    const [postsResponse, usersResponse] = await Promise.all([
+    const [postsResponse, usersMap] = await Promise.all([
       fetch(API),
-      fetch("https://dummyjson.com/users?limit=0")
+      buildUsersMap()
     ]);
 
-    if (!postsResponse.ok || !usersResponse.ok) {
-      throw new Error("Error al cargar datos");
+    if (!postsResponse.ok) {
+      throw new Error("Error al cargar posts");
     }
 
     const postsData = await postsResponse.json();
-    const usersData = await usersResponse.json();
-
-    const usersMap = {};
-    usersData.users.forEach(user => {
-      usersMap[user.id] = user;
-    });
-
     const apiPosts = postsData.posts.map(post => normalizeApiPost(post, usersMap));
 
     renderPosts([...localPosts, ...apiPosts]);
@@ -177,7 +210,7 @@ async function searchPosts() {
 
   if (value === "") {
     searchActive = false;
-    loadPosts();
+    await loadPosts();
     return;
   }
 
@@ -185,32 +218,21 @@ async function searchPosts() {
   showState("Buscando...");
 
   try {
-    const usersResponse = await fetch("https://dummyjson.com/users?limit=0");
-
-    if (!usersResponse.ok) {
-      throw new Error("Error cargando usuarios");
-    }
-
-    const usersData = await usersResponse.json();
-    const usersMap = {};
-    usersData.users.forEach(user => {
-      usersMap[user.id] = user;
-    });
+    const usersMap = await buildUsersMap();
 
     if (type === "id") {
       const res = await fetch(`${API}/${encodeURIComponent(value)}`);
-
-      if (!res.ok) {
-        renderPosts([]);
-        return;
-      }
-
-      const post = await res.json();
 
       const localMatches = localPosts.filter(
         localPost => String(localPost.id) === value
       );
 
+      if (!res.ok) {
+        renderPosts(localMatches);
+        return;
+      }
+
+      const post = await res.json();
       const apiMatch = normalizeApiPost(post, usersMap);
 
       renderPosts([...localMatches, apiMatch]);
@@ -228,7 +250,8 @@ async function searchPosts() {
 
     const localResults = localPosts.filter(post =>
       post.author.toLowerCase().includes(value.toLowerCase()) ||
-      post.body.toLowerCase().includes(value.toLowerCase())
+      post.body.toLowerCase().includes(value.toLowerCase()) ||
+      (post.username && post.username.toLowerCase().includes(value.toLowerCase()))
     );
 
     renderPosts([...localResults, ...apiResults]);
@@ -277,6 +300,8 @@ async function createPost() {
     localPosts.unshift({
       id: data.id || Date.now(),
       author: author,
+      username: "@localuser",
+      avatar: DEFAULT_AVATAR,
       body: body
     });
 
@@ -295,12 +320,16 @@ async function createPost() {
 
 searchBtn.addEventListener("click", searchPosts);
 
-clearBtn.addEventListener("click", () => {
+clearBtn.addEventListener("click", async () => {
   searchInput.value = "";
-  loadPosts();
+  await loadPosts();
 });
 
 publishBtn.addEventListener("click", createPost);
+
+if (backToPostsBtn) {
+  backToPostsBtn.addEventListener("click", closeDetail);
+}
 
 profileNameInput.addEventListener("keydown", event => {
   if (event.key === "Enter") {
