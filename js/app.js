@@ -27,6 +27,7 @@ const detailBody = document.getElementById("detailBody");
 
 let localPosts = [];
 let searchActive = false;
+let activeSourceCard = null;
 
 function showState(message) {
   postsContainer.innerHTML = "";
@@ -55,20 +56,7 @@ function normalizeApiPost(post, usersMap) {
   };
 }
 
-function openDetail(post) {
-  if (
-    !listView ||
-    !detailView ||
-    !detailMeta ||
-    !detailAvatar ||
-    !detailAuthor ||
-    !detailUsername ||
-    !detailBody
-  ) {
-    console.error("Faltan elementos del detail view en el HTML");
-    return;
-  }
-
+function openDetail(post, sourceCard) {
   detailMeta.textContent = `Post #${post.id}`;
   detailAvatar.src = post.avatar || DEFAULT_AVATAR;
   detailAvatar.alt = `Foto de ${post.author}`;
@@ -76,17 +64,35 @@ function openDetail(post) {
   detailUsername.textContent = post.username || "";
   detailBody.textContent = post.body || "";
 
-  listView.classList.add("hidden");
+  detailAvatar.dataset.shared = `avatar-${post.id}`;
+  detailAuthor.dataset.shared = `author-${post.id}`;
+  detailUsername.dataset.shared = `username-${post.id}`;
+  detailBody.dataset.shared = `body-${post.id}`;
+
+
   detailView.classList.remove("hidden");
+  detailView.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+
+  requestAnimationFrame(() => {
+    detailView.classList.add("is-open");
+    animateSharedElements(sourceCard, post.id);
+  });
 }
 
 function closeDetail() {
-  if (!listView || !detailView) {
+  if (!detailView.classList.contains("is-open")) {
     return;
   }
 
-  detailView.classList.add("hidden");
-  listView.classList.remove("hidden");
+  animateSharedElementsBack(activeSourceCard);
+
+  detailView.classList.remove("is-open");
+
+  setTimeout(() => {
+    detailView.classList.add("hidden");
+    document.body.classList.remove("modal-open");
+  }, 300);
 }
 
 function renderPosts(posts) {
@@ -102,6 +108,7 @@ function renderPosts(posts) {
   posts.forEach(post => {
     const card = document.createElement("div");
     card.className = "post-card clickable-post";
+    card.dataset.postId = post.id;
 
     const header = document.createElement("div");
     header.className = "post-header";
@@ -122,16 +129,20 @@ function renderPosts(posts) {
     username.className = "post-username";
     username.textContent = post.username || "";
 
-    const message = document.createElement("div");
-    message.className = "post-body";
-
     const fullBody = post.body || "";
     const shouldTruncate = fullBody.length > POST_PREVIEW_LIMIT;
     const previewText = shouldTruncate
       ? fullBody.slice(0, POST_PREVIEW_LIMIT).trim() + "..."
       : fullBody;
 
+    const message = document.createElement("div");
+    message.className = "post-body";
     message.textContent = previewText;
+
+    avatar.dataset.shared = `avatar-${post.id}`;
+    author.dataset.shared = `author-${post.id}`;
+    username.dataset.shared = `username-${post.id}`;
+    message.dataset.shared = `body-${post.id}`;
 
     authorBox.appendChild(author);
     authorBox.appendChild(username);
@@ -144,20 +155,21 @@ function renderPosts(posts) {
 
     if (shouldTruncate) {
       const toggleBtn = document.createElement("button");
-      toggleBtn.type = "button";
       toggleBtn.className = "post-toggle-btn";
       toggleBtn.textContent = "Ver más";
 
       toggleBtn.addEventListener("click", event => {
         event.stopPropagation();
-        openDetail(post);
+        activeSourceCard = card;
+        openDetail(post, card);
       });
 
       card.appendChild(toggleBtn);
     }
 
     card.addEventListener("click", () => {
-      openDetail(post);
+      activeSourceCard = card;
+      openDetail(post, card);
     });
 
     postsContainer.appendChild(card);
@@ -343,5 +355,131 @@ postInput.addEventListener("keydown", event => {
     createPost();
   }
 });
+
+
+
+
+
+//Animación detail view
+
+function animateSharedElements(sourceCard, postId) {
+  if (!sourceCard) {
+    return;
+  }
+
+  const pairs = [
+    {
+      from: sourceCard.querySelector(`[data-shared="avatar-${postId}"]`),
+      to: detailAvatar
+    },
+    {
+      from: sourceCard.querySelector(`[data-shared="author-${postId}"]`),
+      to: detailAuthor
+    },
+    {
+      from: sourceCard.querySelector(`[data-shared="username-${postId}"]`),
+      to: detailUsername
+    },
+    {
+      from: sourceCard.querySelector(`[data-shared="body-${postId}"]`),
+      to: detailBody
+    }
+  ];
+
+  pairs.forEach(({ from, to }) => {
+    if (!from || !to) {
+      return;
+    }
+
+    const fromRect = from.getBoundingClientRect();
+    const toRect = to.getBoundingClientRect();
+
+    const deltaX = fromRect.left - toRect.left;
+    const deltaY = fromRect.top - toRect.top;
+    const scaleX = fromRect.width / toRect.width;
+    const scaleY = fromRect.height / toRect.height;
+
+    to.animate(
+      [
+        {
+          transformOrigin: "top left",
+          transform: `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`,
+          opacity: 0.85
+        },
+        {
+          transformOrigin: "top left",
+          transform: "translate(0, 0) scale(1, 1)",
+          opacity: 1
+        }
+      ],
+      {
+        duration: 360,
+        easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        fill: "both"
+      }
+    );
+  });
+}
+
+function animateSharedElementsBack(sourceCard) {
+  if (!sourceCard) {
+    return;
+  }
+
+  const postId = sourceCard.dataset.postId;
+
+  const pairs = [
+    {
+      from: detailAvatar,
+      to: sourceCard.querySelector(`[data-shared="avatar-${postId}"]`)
+    },
+    {
+      from: detailAuthor,
+      to: sourceCard.querySelector(`[data-shared="author-${postId}"]`)
+    },
+    {
+      from: detailUsername,
+      to: sourceCard.querySelector(`[data-shared="username-${postId}"]`)
+    },
+    {
+      from: detailBody,
+      to: sourceCard.querySelector(`[data-shared="body-${postId}"]`)
+    }
+  ];
+
+  pairs.forEach(({ from, to }) => {
+    if (!from || !to) {
+      return;
+    }
+
+    const fromRect = from.getBoundingClientRect();
+    const toRect = to.getBoundingClientRect();
+
+    const deltaX = toRect.left - fromRect.left;
+    const deltaY = toRect.top - fromRect.top;
+    const scaleX = toRect.width / fromRect.width;
+    const scaleY = toRect.height / fromRect.height;
+
+    from.animate(
+      [
+        {
+          transformOrigin: "top left",
+          transform: "translate(0, 0) scale(1, 1)",
+          opacity: 1
+        },
+        {
+          transformOrigin: "top left",
+          transform: `translate(${deltaX}px, ${deltaY}px) scale(${scaleX}, ${scaleY})`,
+          opacity: 0.85
+        }
+      ],
+      {
+        duration: 280,
+        easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+        fill: "both"
+      }
+    );
+  });
+}
 
 loadPosts();
