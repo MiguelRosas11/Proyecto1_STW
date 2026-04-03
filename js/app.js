@@ -13,6 +13,14 @@ const postInput = document.getElementById("postInput");
 const publishBtn = document.getElementById("publishBtn");
 const createFeedback = document.getElementById("createFeedback");
 
+const listView = document.getElementById("listView");
+const detailView = document.getElementById("detailView");
+const backToPostsBtn = document.getElementById("backToPostsBtn");
+
+const detailMeta = document.getElementById("detailMeta");
+const detailAuthor = document.getElementById("detailAuthor");
+const detailBody = document.getElementById("detailBody");
+
 const POST_PREVIEW_LIMIT = 160;
 
 let localPosts = [];
@@ -30,18 +38,31 @@ function clearState() {
 }
 
 function normalizeApiPost(post, usersMap) {
-  const user = usersMap[post.userId];
+  const user = usersMap?.[post.userId];
 
   return {
     id: post.id,
-    title: post.title,
     author: user
       ? `${user.firstName} ${user.lastName}`
       : `Usuario ${post.userId}`,
-    username: user ? `@${user.username}` : `@user${post.userId}`,
-    avatar: user ? user.image : "",
-    body: post.body
+    username: user
+      ? `@${user.username}`
+      : `@user${post.userId}`,
+    avatar: user?.image || "https://dummyjson.com/icon/user/80",
+    body: post.body || ""
   };
+}
+
+function openDetail(post) {
+  detailMeta.textContent = `Post #${post.id}`;
+  detailAvatar.src = post.avatar || "https://dummyjson.com/icon/user/80";
+  detailAvatar.alt = `Foto de ${post.author}`;
+  detailAuthor.textContent = post.author;
+  detailUsername.textContent = post.username || "";
+  detailBody.textContent = post.body;
+
+  listView.classList.add("hidden");
+  detailView.classList.remove("hidden");
 }
 
 function renderPosts(posts) {
