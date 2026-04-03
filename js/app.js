@@ -15,7 +15,6 @@ const postInput = document.getElementById("postInput");
 const publishBtn = document.getElementById("publishBtn");
 const createFeedback = document.getElementById("createFeedback");
 
-const listView = document.getElementById("listView");
 const detailView = document.getElementById("detailView");
 const backToPostsBtn = document.getElementById("backToPostsBtn");
 
@@ -25,9 +24,11 @@ const detailAuthor = document.getElementById("detailAuthor");
 const detailUsername = document.getElementById("detailUsername");
 const detailBody = document.getElementById("detailBody");
 
+let apiPosts = [];
 let localPosts = [];
 let searchActive = false;
 let activeSourceCard = null;
+let nextLocalId = null;
 
 function showState(message) {
   postsContainer.innerHTML = "";
@@ -56,6 +57,22 @@ function normalizeApiPost(post, usersMap) {
   };
 }
 
+function getAllPosts() {
+  return [...localPosts, ...apiPosts];
+}
+
+function initializeNextLocalId() {
+  if (nextLocalId !== null) {
+    return;
+  }
+
+  const maxApiId = apiPosts.reduce((max, post) => {
+    return typeof post.id === "number" && post.id > max ? post.id : max;
+  }, 0);
+
+  nextLocalId = maxApiId + 1;
+}
+
 function openDetail(post, sourceCard) {
   detailMeta.textContent = `Post #${post.id}`;
   detailAvatar.src = post.avatar || DEFAULT_AVATAR;
@@ -68,7 +85,6 @@ function openDetail(post, sourceCard) {
   detailAuthor.dataset.shared = `author-${post.id}`;
   detailUsername.dataset.shared = `username-${post.id}`;
   detailBody.dataset.shared = `body-${post.id}`;
-
 
   detailView.classList.remove("hidden");
   detailView.setAttribute("aria-hidden", "false");
@@ -86,11 +102,11 @@ function closeDetail() {
   }
 
   animateSharedElementsBack(activeSourceCard);
-
   detailView.classList.remove("is-open");
 
   setTimeout(() => {
     detailView.classList.add("hidden");
+    detailView.setAttribute("aria-hidden", "true");
     document.body.classList.remove("modal-open");
   }, 300);
 }
@@ -108,7 +124,7 @@ function renderPosts(posts) {
   posts.forEach(post => {
     const card = document.createElement("div");
     card.className = "post-card clickable-post";
-    card.dataset.postId = post.id;
+    card.dataset.postId = String(post.id);
 
     const header = document.createElement("div");
     header.className = "post-header";
@@ -155,6 +171,7 @@ function renderPosts(posts) {
 
     if (shouldTruncate) {
       const toggleBtn = document.createElement("button");
+      toggleBtn.type = "button";
       toggleBtn.className = "post-toggle-btn";
       toggleBtn.textContent = "Ver más";
 
@@ -208,9 +225,13 @@ async function loadPosts() {
     }
 
     const postsData = await postsResponse.json();
-    const apiPosts = postsData.posts.map(post => normalizeApiPost(post, usersMap));
 
-    renderPosts([...localPosts, ...apiPosts]);
+    apiPosts = postsData.posts.map(post =>
+      normalizeApiPost(post, usersMap)
+    );
+
+    initializeNextLocalId();
+    renderPosts(getAllPosts());
   } catch (error) {
     showState("Error cargando posts");
   }
@@ -222,7 +243,7 @@ async function searchPosts() {
 
   if (value === "") {
     searchActive = false;
-    await loadPosts();
+    renderPosts(getAllPosts());
     return;
   }
 
@@ -230,40 +251,33 @@ async function searchPosts() {
   showState("Buscando...");
 
   try {
-    const usersMap = await buildUsersMap();
-
     if (type === "id") {
-      const res = await fetch(`${API}/${encodeURIComponent(value)}`);
+      const numericValue = Number(value);
 
-      const localMatches = localPosts.filter(
-        localPost => String(localPost.id) === value
-      );
-
-      if (!res.ok) {
-        renderPosts(localMatches);
+      if (Number.isNaN(numericValue)) {
+        renderPosts([]);
         return;
       }
 
-      const post = await res.json();
-      const apiMatch = normalizeApiPost(post, usersMap);
+      const localMatches = localPosts.filter(post => post.id === numericValue);
+      const apiMatches = apiPosts.filter(post => post.id === numericValue);
 
-      renderPosts([...localMatches, apiMatch]);
+      renderPosts([...localMatches, ...apiMatches]);
       return;
     }
 
-    const res = await fetch(`${API}/search?q=${encodeURIComponent(value)}`);
+    const lowerValue = value.toLowerCase();
 
-    if (!res.ok) {
-      throw new Error("Error en búsqueda");
-    }
-
-    const data = await res.json();
-    const apiResults = data.posts.map(post => normalizeApiPost(post, usersMap));
+    const apiResults = apiPosts.filter(post =>
+      post.author.toLowerCase().includes(lowerValue) ||
+      post.body.toLowerCase().includes(lowerValue) ||
+      (post.username && post.username.toLowerCase().includes(lowerValue))
+    );
 
     const localResults = localPosts.filter(post =>
-      post.author.toLowerCase().includes(value.toLowerCase()) ||
-      post.body.toLowerCase().includes(value.toLowerCase()) ||
-      (post.username && post.username.toLowerCase().includes(value.toLowerCase()))
+      post.author.toLowerCase().includes(lowerValue) ||
+      post.body.toLowerCase().includes(lowerValue) ||
+      (post.username && post.username.toLowerCase().includes(lowerValue))
     );
 
     renderPosts([...localResults, ...apiResults]);
@@ -307,10 +321,12 @@ async function createPost() {
       throw new Error("Error al publicar");
     }
 
-    const data = await response.json();
+    await response.json();
+
+    initializeNextLocalId();
 
     localPosts.unshift({
-      id: data.id || Date.now(),
+      id: nextLocalId++,
       author: author,
       username: "@localuser",
       avatar: DEFAULT_AVATAR,
@@ -323,44 +339,12 @@ async function createPost() {
     if (searchActive && searchInput.value.trim() !== "") {
       await searchPosts();
     } else {
-      await loadPosts();
+      renderPosts(getAllPosts());
     }
   } catch (error) {
     createFeedback.textContent = "Error publicando";
   }
 }
-
-searchBtn.addEventListener("click", searchPosts);
-
-clearBtn.addEventListener("click", async () => {
-  searchInput.value = "";
-  await loadPosts();
-});
-
-publishBtn.addEventListener("click", createPost);
-
-if (backToPostsBtn) {
-  backToPostsBtn.addEventListener("click", closeDetail);
-}
-
-profileNameInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    postInput.focus();
-  }
-});
-
-postInput.addEventListener("keydown", event => {
-  if (event.key === "Enter" && event.ctrlKey) {
-    createPost();
-  }
-});
-
-
-
-
-
-//Animación detail view
 
 function animateSharedElements(sourceCard, postId) {
   if (!sourceCard) {
@@ -481,5 +465,32 @@ function animateSharedElementsBack(sourceCard) {
     );
   });
 }
+
+searchBtn.addEventListener("click", searchPosts);
+
+clearBtn.addEventListener("click", () => {
+  searchInput.value = "";
+  searchActive = false;
+  renderPosts(getAllPosts());
+});
+
+publishBtn.addEventListener("click", createPost);
+
+if (backToPostsBtn) {
+  backToPostsBtn.addEventListener("click", closeDetail);
+}
+
+profileNameInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    postInput.focus();
+  }
+});
+
+postInput.addEventListener("keydown", event => {
+  if (event.key === "Enter" && event.ctrlKey) {
+    createPost();
+  }
+});
 
 loadPosts();
