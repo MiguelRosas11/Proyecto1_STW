@@ -125,16 +125,20 @@ function closeDetail() {
 }
 
 function renderPosts(posts) {
+  currentPosts = posts;
+  const paginatedPosts = paginatePosts(posts);
+
   postsContainer.innerHTML = "";
 
   if (!posts || posts.length === 0) {
     showState("No se encontraron posts");
+    renderPagination(0);
     return;
   }
 
   clearState();
 
-  posts.forEach(post => {
+  paginatedPosts.forEach(post => {
     const card = document.createElement("div");
     card.className = "post-card clickable-post";
     card.dataset.postId = String(post.id);
@@ -204,6 +208,8 @@ function renderPosts(posts) {
 
     postsContainer.appendChild(card);
   });
+
+  renderPagination(currentPosts.length);
 }
 
 async function buildUsersMap() {
