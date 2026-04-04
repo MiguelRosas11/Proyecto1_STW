@@ -40,6 +40,15 @@ function showState(message) {
   uiState.classList.add("visible");
 }
 
+function paginatePosts(posts) {
+  currentPosts = posts;
+
+  const start = (currentPage - 1) * POSTS_PER_PAGE;
+  const end = start + POSTS_PER_PAGE;
+
+  return posts.slice(start, end);
+}
+
 function clearState() {
   uiState.textContent = "";
   uiState.classList.remove("visible");
