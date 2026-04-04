@@ -24,11 +24,15 @@ const detailAuthor = document.getElementById("detailAuthor");
 const detailUsername = document.getElementById("detailUsername");
 const detailBody = document.getElementById("detailBody");
 
+const POSTS_PER_PAGE = 10;
+
 let apiPosts = [];
 let localPosts = [];
 let searchActive = false;
 let activeSourceCard = null;
 let nextLocalId = null;
+let currentPage = 1;
+let currentPosts = [];
 
 function showState(message) {
   postsContainer.innerHTML = "";
