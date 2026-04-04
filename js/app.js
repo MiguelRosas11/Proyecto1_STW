@@ -25,6 +25,7 @@ const detailUsername = document.getElementById("detailUsername");
 const detailBody = document.getElementById("detailBody");
 
 const POSTS_PER_PAGE = 10;
+const paginationControls = document.getElementById("paginationControls");
 
 let apiPosts = [];
 let localPosts = [];
@@ -38,6 +39,39 @@ function showState(message) {
   postsContainer.innerHTML = "";
   uiState.textContent = message;
   uiState.classList.add("visible");
+}
+
+function renderPagination(totalPosts) {
+  paginationControls.innerHTML = "";
+
+  const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
+
+  if (totalPages <= 1) return;
+
+  const prevBtn = document.createElement("button");
+  prevBtn.textContent = "←";
+
+  prevBtn.disabled = currentPage === 1;
+  prevBtn.onclick = () => {
+    currentPage--;
+    renderPosts(currentPosts);
+  };
+
+  const nextBtn = document.createElement("button");
+  nextBtn.textContent = "→";
+
+  nextBtn.disabled = currentPage === totalPages;
+  nextBtn.onclick = () => {
+    currentPage++;
+    renderPosts(currentPosts);
+  };
+
+  const pageInfo = document.createElement("span");
+  pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+
+  paginationControls.appendChild(prevBtn);
+  paginationControls.appendChild(pageInfo);
+  paginationControls.appendChild(nextBtn);
 }
 
 function paginatePosts(posts) {
