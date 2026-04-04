@@ -268,19 +268,33 @@ async function searchPosts() {
 
     const lowerValue = value.toLowerCase();
 
-    const apiResults = apiPosts.filter(post =>
-      post.author.toLowerCase().includes(lowerValue) ||
-      post.body.toLowerCase().includes(lowerValue) ||
-      (post.username && post.username.toLowerCase().includes(lowerValue))
-    );
+    if (type === "text") {
+      const localResults = localPosts.filter(post =>
+        post.body.toLowerCase().includes(lowerValue)
+      );
 
-    const localResults = localPosts.filter(post =>
-      post.author.toLowerCase().includes(lowerValue) ||
-      post.body.toLowerCase().includes(lowerValue) ||
-      (post.username && post.username.toLowerCase().includes(lowerValue))
-    );
+      const apiResults = apiPosts.filter(post =>
+        post.body.toLowerCase().includes(lowerValue)
+      );
 
-    renderPosts([...localResults, ...apiResults]);
+      renderPosts([...localResults, ...apiResults]);
+      return;
+    }
+
+    if (type === "author") {
+      const localResults = localPosts.filter(post =>
+        post.author.toLowerCase().includes(lowerValue)
+      );
+
+      const apiResults = apiPosts.filter(post =>
+        post.author.toLowerCase().includes(lowerValue)
+      );
+
+      renderPosts([...localResults, ...apiResults]);
+      return;
+    }
+
+    renderPosts([]);
   } catch (error) {
     showState("Error en búsqueda");
   }
@@ -490,6 +504,16 @@ profileNameInput.addEventListener("keydown", event => {
 postInput.addEventListener("keydown", event => {
   if (event.key === "Enter" && event.ctrlKey) {
     createPost();
+  }
+});
+
+searchType.addEventListener("change", () => {
+  if (searchType.value === "text") {
+    searchInput.placeholder = "Buscar en el contenido del post";
+  } else if (searchType.value === "author") {
+    searchInput.placeholder = "Buscar por nombre del usuario";
+  } else {
+    searchInput.placeholder = "Buscar post por ID";
   }
 });
 
