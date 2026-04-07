@@ -15,7 +15,10 @@
       <p>Configura tu perfil y publica un mensaje.</p>
 
       <section id="authSection" class="auth-section">
-        <h3>Iniciar sesión</h3>
+        <div class="auth-tabs">
+          <button id="loginTabBtn" type="button" class="auth-tab active-tab">Iniciar sesión</button>
+          <button id="registerTabBtn" type="button" class="auth-tab">Crear cuenta</button>
+        </div>
       
         <form id="loginForm" class="auth-form">
           <label for="loginUsernameInput">Usuario</label>
@@ -37,6 +40,34 @@
           >
       
           <button type="submit">Entrar</button>
+        </form>
+      
+        <form id="registerForm" class="auth-form hidden">
+          <label for="registerNameInput">Nombre visible</label>
+          <input
+            id="registerNameInput"
+            type="text"
+            placeholder="Escribe tu nombre"
+            maxlength="40"
+          >
+      
+          <label for="registerUsernameInput">Usuario</label>
+          <input
+            id="registerUsernameInput"
+            type="text"
+            placeholder="Crea un usuario"
+            maxlength="20"
+          >
+      
+          <label for="registerPasswordInput">Contraseña</label>
+          <input
+            id="registerPasswordInput"
+            type="password"
+            placeholder="Crea una contraseña"
+            maxlength="40"
+          >
+      
+          <button type="submit">Crear cuenta</button>
         </form>
       
         <div id="authFeedback"></div>
