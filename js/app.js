@@ -2,6 +2,12 @@ const API = "https://dummyjson.com/posts";
 const DEFAULT_AVATAR = "https://dummyjson.com/icon/user/80";
 const POST_PREVIEW_LIMIT = 160;
 
+const STORAGE_KEYS = {
+  users: "mini_blog_users",
+  session: "mini_blog_session",
+  posts: "mini_blog_local_posts"
+};
+
 const postsContainer = document.getElementById("postsContainer");
 const uiState = document.getElementById("uiState");
 
@@ -34,6 +40,35 @@ let activeSourceCard = null;
 let nextLocalId = null;
 let currentPage = 1;
 let currentPosts = [];
+let currentUser = null;
+
+function getStoredUsers() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.users)) || [];
+}
+
+function saveStoredUsers(users) {
+  localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
+}
+
+function getStoredSession() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.session)) || null;
+}
+
+function saveStoredSession(user) {
+  localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(user));
+}
+
+function clearStoredSession() {
+  localStorage.removeItem(STORAGE_KEYS.session);
+}
+
+function getStoredLocalPosts() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.posts)) || [];
+}
+
+function saveStoredLocalPosts(posts) {
+  localStorage.setItem(STORAGE_KEYS.posts, JSON.stringify(posts));
+}
 
 function showState(message) {
   postsContainer.innerHTML = "";
