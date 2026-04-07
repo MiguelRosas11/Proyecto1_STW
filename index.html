@@ -96,21 +96,23 @@
         <button id="logoutBtn" type="button" class="danger-btn">Cerrar sesión</button>
       </section>
 
-      <input
-        id="postTitleInput"
-        type="text"
-        placeholder="Título del post"
-        maxlength="80"
-      >
-
-      <textarea id="postInput" placeholder="Escribe tu mensaje..."></textarea>
-
-      <div class="create-actions">
-        <button id="publishBtn" type="button">Publicar</button>
-        <button id="cancelEditBtn" type="button" class="ghost-btn hidden">Cancelar edición</button>
-      </div>
-
-      <div id="createFeedback"></div>
+      <section id="createPostSection" class="hidden">
+        <input
+          id="postTitleInput"
+          type="text"
+          placeholder="Título del post"
+          maxlength="80"
+        >
+      
+        <textarea id="postInput" placeholder="Escribe tu mensaje..."></textarea>
+      
+        <div class="create-actions">
+          <button id="publishBtn" type="button">Publicar</button>
+          <button id="cancelEditBtn" type="button" class="ghost-btn hidden">Cancelar edición</button>
+        </div>
+      
+        <div id="createFeedback"></div>
+      </section>
     </aside>
 
     <section class="posts-panel">
@@ -192,6 +194,7 @@
 
           <div class="detail-card">
             <p id="detailMeta" class="detail-meta"></p>
+            <h3 id="detailTitle" class="detail-title"></h3>
 
             <div class="detail-user">
               <img id="detailAvatar" class="detail-avatar" src="" alt="Foto de perfil">

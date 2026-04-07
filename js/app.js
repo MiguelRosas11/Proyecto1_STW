@@ -56,7 +56,7 @@ const profileFeedback = document.getElementById("profileFeedback");
 const profileLogoutBtn = document.getElementById("profileLogoutBtn");
 const detailView = document.getElementById("detailView");
 const backToPostsBtn = document.getElementById("backToPostsBtn");
-
+const detailTitle = document.getElementById("detailTitle");
 const detailMeta = document.getElementById("detailMeta");
 const detailAvatar = document.getElementById("detailAvatar");
 const detailAuthor = document.getElementById("detailAuthor");
@@ -196,22 +196,23 @@ function setCurrentUser(user) {
 }
 
 function updateSessionUI() {
-  if (!authSection || !sessionSection) {
+  if (!authSection || !sessionSection || !createPostSection) {
     return;
   }
 
   if (currentUser) {
     authSection.classList.add("hidden");
     sessionSection.classList.remove("hidden");
+    createPostSection.classList.remove("hidden");
 
     sessionName.textContent = currentUser.displayName;
     sessionUsername.textContent = `@${currentUser.username}`;
   } else {
     authSection.classList.remove("hidden");
     sessionSection.classList.add("hidden");
+    createPostSection.classList.add("hidden");
   }
 }
-
 function getCurrentUserPosts() {
   if (!currentUser) return [];
   return localPosts.filter(post => post.userId === currentUser.id);
@@ -404,7 +405,7 @@ function openDetail(post, sourceCard) {
   detailAuthor.textContent = post.author;
   detailUsername.textContent = post.username || "";
   detailBody.textContent = post.body || "";
-
+  detailTitle.textContent = post.title || "Post sin título";
   detailAvatar.dataset.shared = `avatar-${post.id}`;
   detailAuthor.dataset.shared = `author-${post.id}`;
   detailUsername.dataset.shared = `username-${post.id}`;
@@ -499,6 +500,13 @@ function renderPosts(posts) {
     header.appendChild(authorBox);
 
     card.appendChild(header);
+
+    if (post.isLocal) {
+      const badge = document.createElement("div");
+      badge.className = "post-badge";
+      badge.textContent = "Local";
+      card.appendChild(badge);
+    }
     card.appendChild(titleEl);
     card.appendChild(message);
 
@@ -773,6 +781,8 @@ function resetCreateForm() {
   editingPostId = null;
   cancelEditBtn.classList.add("hidden");
   publishBtn.textContent = "Publicar";
+  createFeedback.textContent = "";
+  createPostSection.classList.remove("editing-mode");
 }
 
 function startEditingPost(postId) {
@@ -791,6 +801,7 @@ function startEditingPost(postId) {
   cancelEditBtn.classList.remove("hidden");
   publishBtn.textContent = "Guardar cambios";
   createFeedback.textContent = "Editando publicación local.";
+  createPostSection.classList.add("editing-mode");
   postTitleInput.focus();
 }
 
