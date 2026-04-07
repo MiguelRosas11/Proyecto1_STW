@@ -81,6 +81,50 @@ function restoreSession() {
   currentUser = storedSession;
 }
 
+function normalizeUsername(value) {
+  return value.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function generateLocalUserId() {
+  const users = getStoredUsers();
+
+  const maxId = users.reduce((max, user) => {
+    return typeof user.id === "number" && user.id > max ? user.id : max;
+  }, 1000);
+
+  return maxId + 1;
+}
+
+function registerLocalUser({ displayName, username, password }) {
+  const users = getStoredUsers();
+  const normalizedUsername = normalizeUsername(username);
+
+  const alreadyExists = users.some(user => user.username === normalizedUsername);
+
+  if (alreadyExists) {
+    return {
+      ok: false,
+      message: "Ese usuario ya existe. Prueba con otro."
+    };
+  }
+
+  const newUser = {
+    id: generateLocalUserId(),
+    displayName: displayName.trim(),
+    username: normalizedUsername,
+    password: password,
+    bio: ""
+  };
+
+  users.push(newUser);
+  saveStoredUsers(users);
+
+  return {
+    ok: true,
+    user: newUser
+  };
+}
+
 function showState(message) {
   postsContainer.innerHTML = "";
   uiState.textContent = message;
