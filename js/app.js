@@ -259,7 +259,9 @@ function normalizeApiPost(post, usersMap) {
       ? `@${user.username}`
       : `@user${post.userId}`,
     avatar: user?.image || DEFAULT_AVATAR,
-    body: post.body || ""
+    body: post.body || "",
+    userId: post.userId,
+    isLocal: false
   };
 }
 
@@ -556,8 +558,11 @@ async function createPost() {
       author: currentUser.displayName,
       username: `@${currentUser.username}`,
       avatar: DEFAULT_AVATAR,
-      body: body
+      body: body,
+      userId: currentUser.id,
+      isLocal: true
     });
+    
 
     postInput.value = "";
     createFeedback.textContent = "Post publicado";
