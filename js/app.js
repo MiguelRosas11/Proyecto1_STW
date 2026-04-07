@@ -40,7 +40,20 @@ const logoutBtn = document.getElementById("logoutBtn");
 const postInput = document.getElementById("postInput");
 const publishBtn = document.getElementById("publishBtn");
 const createFeedback = document.getElementById("createFeedback");
+const homeViewBtn = document.getElementById("homeViewBtn");
+const profileViewBtn = document.getElementById("profileViewBtn");
 
+const listView = document.getElementById("listView");
+const profileView = document.getElementById("profileView");
+
+const profileEmptyState = document.getElementById("profileEmptyState");
+const profileForm = document.getElementById("profileForm");
+const profileDisplayNameInput = document.getElementById("profileDisplayNameInput");
+const profileBioInput = document.getElementById("profileBioInput");
+const profileUsernameText = document.getElementById("profileUsernameText");
+const profilePostCount = document.getElementById("profilePostCount");
+const profileFeedback = document.getElementById("profileFeedback");
+const profileLogoutBtn = document.getElementById("profileLogoutBtn");
 const detailView = document.getElementById("detailView");
 const backToPostsBtn = document.getElementById("backToPostsBtn");
 
@@ -62,6 +75,7 @@ let currentPage = 1;
 let currentPosts = [];
 let currentUser = null;
 let editingPostId = null;
+let currentView = "home";
 
 
 function getStoredUsers() {
@@ -178,6 +192,7 @@ function setCurrentUser(user) {
   }
 
   updateSessionUI();
+  updateProfileUI();
 }
 
 function updateSessionUI() {
@@ -194,6 +209,84 @@ function updateSessionUI() {
   } else {
     authSection.classList.remove("hidden");
     sessionSection.classList.add("hidden");
+  }
+}
+
+function getCurrentUserPosts() {
+  if (!currentUser) return [];
+  return localPosts.filter(post => post.userId === currentUser.id);
+}
+
+function updateStoredUser(updatedUser) {
+  const users = getStoredUsers().map(user =>
+    user.id === updatedUser.id ? updatedUser : user
+  );
+  saveStoredUsers(users);
+}
+
+function updateProfileUI() {
+  if (!currentUser) {
+    profileEmptyState.classList.remove("hidden");
+    profileForm.classList.add("hidden");
+    profilePostCount.textContent = "0";
+    return;
+  }
+
+  profileEmptyState.classList.add("hidden");
+  profileForm.classList.remove("hidden");
+  profileDisplayNameInput.value = currentUser.displayName || "";
+  profileBioInput.value = currentUser.bio || "";
+  profileUsernameText.textContent = `@${currentUser.username}`;
+  profilePostCount.textContent = String(getCurrentUserPosts().length);
+}
+
+function saveProfile() {
+  if (!currentUser) {
+    profileFeedback.textContent = "Debes iniciar sesión para editar tu perfil.";
+    return;
+  }
+
+  const displayName = profileDisplayNameInput.value.trim();
+  const bio = profileBioInput.value.trim();
+
+  if (displayName.length < 2) {
+    profileFeedback.textContent = "El nombre visible debe tener al menos 2 caracteres.";
+    profileDisplayNameInput.focus();
+    return;
+  }
+
+  if (bio.length > 180) {
+    profileFeedback.textContent = "La biografía no puede exceder 180 caracteres.";
+    profileBioInput.focus();
+    return;
+  }
+
+  const updatedUser = {
+    ...currentUser,
+    displayName,
+    bio
+  };
+
+  setCurrentUser(updatedUser);
+  updateStoredUser(updatedUser);
+  saveStoredSession(updatedUser);
+  updateProfileUI();
+  profileFeedback.textContent = "Perfil actualizado correctamente.";
+}
+
+function showView(view) {
+  currentView = view;
+
+  if (view === "profile") {
+    listView.classList.add("hidden");
+    profileView.classList.remove("hidden");
+    homeViewBtn.classList.remove("active-nav");
+    profileViewBtn.classList.add("active-nav");
+  } else {
+    profileView.classList.add("hidden");
+    listView.classList.remove("hidden");
+    profileViewBtn.classList.remove("active-nav");
+    homeViewBtn.classList.add("active-nav");
   }
 }
 
@@ -938,7 +1031,31 @@ if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
     setCurrentUser(null);
     authFeedback.textContent = "Sesión cerrada correctamente.";
+    showView("home");
   });
+}
+
+if (profileLogoutBtn) {
+  profileLogoutBtn.addEventListener("click", () => {
+    setCurrentUser(null);
+    authFeedback.textContent = "Sesión cerrada correctamente.";
+    showView("home");
+  });
+}
+
+if (profileForm) {
+  profileForm.addEventListener("submit", event => {
+    event.preventDefault();
+    saveProfile();
+  });
+}
+
+if (homeViewBtn) {
+  homeViewBtn.addEventListener("click", () => showView("home"));
+}
+
+if (profileViewBtn) {
+  profileViewBtn.addEventListener("click", () => showView("profile"));
 }
 
 if (cancelEditBtn) {
@@ -971,4 +1088,5 @@ searchType.addEventListener("change", () => {
 });
 
 restoreSession();
+showView("home");
 loadPosts();

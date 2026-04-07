@@ -559,4 +559,106 @@ background:#b91c1c;
     margin-top:10px;
     flex-wrap:wrap;
     }
-    
+
+    .side-nav{
+      display:flex;
+      gap:10px;
+      margin-bottom:12px;
+      }
+      
+      .active-nav{
+      background:#2563eb;
+      color:white;
+      }
+      
+      .profile-view-card{
+      background:#f8fafc;
+      border-radius:24px;
+      padding:24px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      height:100%;
+      overflow-y:auto;
+      }
+      
+      .profile-view-card h2{
+      font-size:28px;
+      }
+      
+      .profile-view-helper{
+      color:#6b7280;
+      font-size:14px;
+      line-height:1.5;
+      }
+      
+      .profile-empty{
+      padding:18px;
+      background:white;
+      border-radius:18px;
+      color:#6b7280;
+      box-shadow:0 4px 14px rgba(0,0,0,0.05);
+      }
+      
+      .profile-form{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      background:white;
+      padding:18px;
+      border-radius:20px;
+      box-shadow:0 4px 14px rgba(0,0,0,0.05);
+      }
+      
+      .profile-form label{
+      font-size:14px;
+      font-weight:600;
+      color:#374151;
+      }
+      
+      .profile-form input,
+      .profile-form textarea{
+      width:100%;
+      padding:12px 14px;
+      border:none;
+      outline:none;
+      border-radius:16px;
+      background:#f3f6fb;
+      font-size:14px;
+      color:#111827;
+      }
+      
+      .profile-form textarea{
+      resize:none;
+      min-height:120px;
+      }
+      
+      .profile-meta-box{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      padding:12px 0;
+      }
+      
+      .profile-meta-box > div{
+      background:#f8fafc;
+      padding:14px;
+      border-radius:16px;
+      }
+      
+      .meta-label{
+      display:block;
+      font-size:12px;
+      font-weight:700;
+      color:#6b7280;
+      margin-bottom:6px;
+      text-transform:uppercase;
+      letter-spacing:0.04em;
+      }
+      
+      .profile-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      }
+      
