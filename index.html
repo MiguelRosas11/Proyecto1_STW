@@ -14,23 +14,33 @@
       <h2>Crear Post</h2>
       <p>Configura tu perfil y publica un mensaje.</p>
 
-      <div class="mini-profile">
-        <div class="profile-avatar">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-4.418 0-8 2.239-8 5v1c0 .552.448 1 1 1h14c.552 0 1-.448 1-1v-1c0-2.761-3.582-5-8-5z"/>
-          </svg>
-        </div>
-
-        <div class="profile-name-box">
-          <label for="profileNameInput">Nombre de usuario</label>
+      <section id="authSection" class="auth-section">
+        <h3>Iniciar sesión</h3>
+      
+        <form id="loginForm" class="auth-form">
+          <label for="loginUsernameInput">Usuario</label>
           <input
-            id="profileNameInput"
+            id="loginUsernameInput"
             type="text"
-            placeholder="Escribe tu nombre"
-            maxlength="40"
+            placeholder="Ingresa tu usuario"
+            maxlength="20"
+            autocomplete="username"
           >
-        </div>
-      </div>
+      
+          <label for="loginPasswordInput">Contraseña</label>
+          <input
+            id="loginPasswordInput"
+            type="password"
+            placeholder="Ingresa tu contraseña"
+            maxlength="40"
+            autocomplete="current-password"
+          >
+      
+          <button type="submit">Entrar</button>
+        </form>
+      
+        <div id="authFeedback"></div>
+      </section>
 
       <textarea id="postInput" placeholder="Escribe tu mensaje..."></textarea>
 

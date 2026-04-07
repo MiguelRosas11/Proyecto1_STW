@@ -16,7 +16,12 @@ const searchBtn = document.getElementById("searchBtn");
 const searchType = document.getElementById("searchType");
 const clearBtn = document.getElementById("clearBtn");
 
-const profileNameInput = document.getElementById("profileNameInput");
+const authSection = document.getElementById("authSection");
+const loginForm = document.getElementById("loginForm");
+const loginUsernameInput = document.getElementById("loginUsernameInput");
+const loginPasswordInput = document.getElementById("loginPasswordInput");
+const authFeedback = document.getElementById("authFeedback");
+
 const postInput = document.getElementById("postInput");
 const publishBtn = document.getElementById("publishBtn");
 const createFeedback = document.getElementById("createFeedback");
@@ -122,6 +127,27 @@ function registerLocalUser({ displayName, username, password }) {
   return {
     ok: true,
     user: newUser
+  };
+}
+
+function loginLocalUser(username, password) {
+  const users = getStoredUsers();
+  const normalizedUsername = normalizeUsername(username);
+
+  const foundUser = users.find(
+    user => user.username === normalizedUsername && user.password === password
+  );
+
+  if (!foundUser) {
+    return {
+      ok: false,
+      message: "Usuario o contraseña incorrectos."
+    };
+  }
+
+  return {
+    ok: true,
+    user: foundUser
   };
 }
 
@@ -446,12 +472,10 @@ async function searchPosts() {
 }
 
 async function createPost() {
-  const author = profileNameInput.value.trim();
   const body = postInput.value.trim();
 
-  if (author === "") {
-    createFeedback.textContent = "Debes ingresar un nombre de usuario antes de publicar.";
-    profileNameInput.focus();
+  if (!currentUser) {
+    createFeedback.textContent = "Debes iniciar sesión antes de publicar.";
     return;
   }
 
@@ -486,8 +510,8 @@ async function createPost() {
 
     localPosts.unshift({
       id: nextLocalId++,
-      author: author,
-      username: "@localuser",
+      author: currentUser.displayName,
+      username: `@${currentUser.username}`,
       avatar: DEFAULT_AVATAR,
       body: body
     });
@@ -633,18 +657,44 @@ clearBtn.addEventListener("click", () => {
   renderPosts(getAllPosts());
 });
 
+if (loginForm) {
+  loginForm.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const username = loginUsernameInput.value.trim();
+    const password = loginPasswordInput.value.trim();
+
+    if (username.length < 3) {
+      authFeedback.textContent = "El usuario debe tener al menos 3 caracteres.";
+      loginUsernameInput.focus();
+      return;
+    }
+
+    if (password.length < 4) {
+      authFeedback.textContent = "La contraseña debe tener al menos 4 caracteres.";
+      loginPasswordInput.focus();
+      return;
+    }
+
+    const result = loginLocalUser(username, password);
+
+    if (!result.ok) {
+      authFeedback.textContent = result.message;
+      return;
+    }
+
+    currentUser = result.user;
+    saveStoredSession(result.user);
+    authFeedback.textContent = "Sesión iniciada correctamente.";
+    loginForm.reset();
+  });
+}
+
 publishBtn.addEventListener("click", createPost);
 
 if (backToPostsBtn) {
   backToPostsBtn.addEventListener("click", closeDetail);
 }
-
-profileNameInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    postInput.focus();
-  }
-});
 
 postInput.addEventListener("keydown", event => {
   if (event.key === "Enter" && event.ctrlKey) {
