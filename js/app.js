@@ -273,11 +273,31 @@ function saveProfile() {
     displayName,
     bio
   };
-
+  
+  localPosts = localPosts.map(post => {
+    if (post.userId === currentUser.id) {
+      return {
+        ...post,
+        author: displayName
+      };
+    }
+  
+    return post;
+  });
+  
+  saveStoredLocalPosts(localPosts);
+  
   setCurrentUser(updatedUser);
   updateStoredUser(updatedUser);
   saveStoredSession(updatedUser);
   updateProfileUI();
+  
+  if (searchActive && searchInput.value.trim() !== "") {
+    searchPosts();
+  } else {
+    renderPosts(getVisiblePosts());
+  }
+  
   profileFeedback.textContent = "Perfil actualizado correctamente.";
 }
 
