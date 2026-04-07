@@ -70,6 +70,17 @@ function saveStoredLocalPosts(posts) {
   localStorage.setItem(STORAGE_KEYS.posts, JSON.stringify(posts));
 }
 
+function restoreSession() {
+  const storedSession = getStoredSession();
+
+  if (!storedSession) {
+    currentUser = null;
+    return;
+  }
+
+  currentUser = storedSession;
+}
+
 function showState(message) {
   postsContainer.innerHTML = "";
   uiState.textContent = message;
@@ -317,6 +328,8 @@ async function loadPosts() {
     apiPosts = postsData.posts.map(post =>
       normalizeApiPost(post, usersMap)
     );
+
+    localPosts = getStoredLocalPosts();
 
     initializeNextLocalId();
     renderPosts(getAllPosts());
@@ -605,4 +618,5 @@ searchType.addEventListener("change", () => {
   }
 });
 
+restoreSession();
 loadPosts();
