@@ -92,7 +92,7 @@ function restoreSession() {
     return;
   }
 
-  currentUser = storedSession;
+  setCurrentUser(storedSession);
 }
 
 function normalizeUsername(value) {
@@ -158,6 +158,16 @@ function loginLocalUser(username, password) {
     ok: true,
     user: foundUser
   };
+}
+
+function setCurrentUser(user) {
+  currentUser = user;
+
+  if (user) {
+    saveStoredSession(user);
+  } else {
+    clearStoredSession();
+  }
 }
 
 function showState(message) {
@@ -710,8 +720,7 @@ if (loginForm) {
       return;
     }
 
-    currentUser = result.user;
-    saveStoredSession(result.user);
+    setCurrentUser(result.user);
     authFeedback.textContent = "Sesión iniciada correctamente.";
     loginForm.reset();
   });
