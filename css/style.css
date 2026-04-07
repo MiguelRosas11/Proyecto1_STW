@@ -527,3 +527,28 @@ background:#dc2626;
 .danger-btn:hover{
 background:#b91c1c;
 }
+
+.create-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  }
+  
+  .post-actions{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+  }
+  
+  .post-action-btn{
+  padding:10px 14px;
+  border-radius:12px;
+  font-size:13px;
+  }
+  
+  .post-title{
+  font-size:15px;
+  font-weight:700;
+  color:#1f2937;
+  margin-bottom:8px;
+  }

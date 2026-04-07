@@ -28,6 +28,8 @@ const registerForm = document.getElementById("registerForm");
 const registerNameInput = document.getElementById("registerNameInput");
 const registerUsernameInput = document.getElementById("registerUsernameInput");
 const registerPasswordInput = document.getElementById("registerPasswordInput");
+const postTitleInput = document.getElementById("postTitleInput");
+const cancelEditBtn = document.getElementById("cancelEditBtn");
 
 const authFeedback = document.getElementById("authFeedback");
 const sessionSection = document.getElementById("sessionSection");
@@ -59,6 +61,8 @@ let nextLocalId = null;
 let currentPage = 1;
 let currentPosts = [];
 let currentUser = null;
+let editingPostId = null;
+
 
 function getStoredUsers() {
   return JSON.parse(localStorage.getItem(STORAGE_KEYS.users)) || [];
@@ -252,6 +256,7 @@ function normalizeApiPost(post, usersMap) {
 
   return {
     id: post.id,
+    title: post.title || "Post sin título",
     author: user
       ? `${user.firstName} ${user.lastName}`
       : `Usuario ${post.userId}`,
@@ -369,6 +374,10 @@ function renderPosts(posts) {
     username.className = "post-username";
     username.textContent = post.username || "";
 
+    const titleEl = document.createElement("div");
+    titleEl.className = "post-title";
+    titleEl.textContent = post.title || "Post sin título";
+
     const fullBody = post.body || "";
     const shouldTruncate = fullBody.length > POST_PREVIEW_LIMIT;
     const previewText = shouldTruncate
@@ -391,6 +400,7 @@ function renderPosts(posts) {
     header.appendChild(authorBox);
 
     card.appendChild(header);
+    card.appendChild(titleEl);
     card.appendChild(message);
 
     if (shouldTruncate) {
@@ -406,6 +416,24 @@ function renderPosts(posts) {
       });
 
       card.appendChild(toggleBtn);
+    }
+
+    if (post.isLocal && currentUser && post.userId === currentUser.id) {
+      const actions = document.createElement("div");
+      actions.className = "post-actions";
+
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "ghost-btn post-action-btn";
+      editBtn.textContent = "Editar";
+
+      editBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        startEditingPost(post.id);
+      });
+
+      actions.appendChild(editBtn);
+      card.appendChild(actions);
     }
 
     card.addEventListener("click", () => {
@@ -521,6 +549,7 @@ async function searchPosts() {
 }
 
 async function createPost() {
+  const title = postTitleInput.value.trim();
   const body = postInput.value.trim();
 
   if (!currentUser) {
@@ -528,9 +557,43 @@ async function createPost() {
     return;
   }
 
+  if (title.length < 3) {
+    createFeedback.textContent = "El título debe tener al menos 3 caracteres.";
+    postTitleInput.focus();
+    return;
+  }
+
   if (body === "") {
     createFeedback.textContent = "Escribe un mensaje antes de publicar.";
     postInput.focus();
+    return;
+  }
+
+  if (editingPostId !== null) {
+    const targetIndex = localPosts.findIndex(
+      post => post.id === editingPostId && post.userId === currentUser.id
+    );
+
+    if (targetIndex === -1) {
+      createFeedback.textContent = "No se encontró el post a editar.";
+      return;
+    }
+
+    localPosts[targetIndex] = {
+      ...localPosts[targetIndex],
+      title,
+      body
+    };
+
+    saveStoredLocalPosts(localPosts);
+    resetCreateForm();
+    createFeedback.textContent = "Post actualizado";
+
+    if (searchActive && searchInput.value.trim() !== "") {
+      await searchPosts();
+    } else {
+      renderPosts(getVisiblePosts());
+    }
     return;
   }
 
@@ -543,7 +606,7 @@ async function createPost() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        title: "post",
+        title: title,
         body: body,
         userId: 1
       })
@@ -559,6 +622,7 @@ async function createPost() {
 
     localPosts.unshift({
       id: nextLocalId++,
+      title: title,
       author: currentUser.displayName,
       username: `@${currentUser.username}`,
       avatar: DEFAULT_AVATAR,
@@ -566,10 +630,9 @@ async function createPost() {
       userId: currentUser.id,
       isLocal: true
     });
-    
+
     saveStoredLocalPosts(localPosts);
-    
-    postInput.value = "";
+    resetCreateForm();
     createFeedback.textContent = "Post publicado";
 
     if (searchActive && searchInput.value.trim() !== "") {
@@ -580,6 +643,33 @@ async function createPost() {
   } catch (error) {
     createFeedback.textContent = "Error publicando";
   }
+}
+
+function resetCreateForm() {
+  postTitleInput.value = "";
+  postInput.value = "";
+  editingPostId = null;
+  cancelEditBtn.classList.add("hidden");
+  publishBtn.textContent = "Publicar";
+}
+
+function startEditingPost(postId) {
+  const post = localPosts.find(
+    item => item.id === postId && currentUser && item.userId === currentUser.id
+  );
+
+  if (!post) {
+    createFeedback.textContent = "No se pudo editar este post.";
+    return;
+  }
+
+  editingPostId = post.id;
+  postTitleInput.value = post.title || "";
+  postInput.value = post.body || "";
+  cancelEditBtn.classList.remove("hidden");
+  publishBtn.textContent = "Guardar cambios";
+  createFeedback.textContent = "Editando publicación local.";
+  postTitleInput.focus();
 }
 
 function animateSharedElements(sourceCard, postId) {
@@ -807,6 +897,13 @@ if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
     setCurrentUser(null);
     authFeedback.textContent = "Sesión cerrada correctamente.";
+  });
+}
+
+if (cancelEditBtn) {
+  cancelEditBtn.addEventListener("click", () => {
+    resetCreateForm();
+    createFeedback.textContent = "Edición cancelada.";
   });
 }
 
