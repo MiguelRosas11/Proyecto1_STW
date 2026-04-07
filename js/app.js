@@ -421,18 +421,29 @@ function renderPosts(posts) {
     if (post.isLocal && currentUser && post.userId === currentUser.id) {
       const actions = document.createElement("div");
       actions.className = "post-actions";
-
+    
       const editBtn = document.createElement("button");
       editBtn.type = "button";
       editBtn.className = "ghost-btn post-action-btn";
       editBtn.textContent = "Editar";
-
+    
       editBtn.addEventListener("click", event => {
         event.stopPropagation();
         startEditingPost(post.id);
       });
-
+    
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "danger-btn post-action-btn";
+      deleteBtn.textContent = "Eliminar";
+    
+      deleteBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        deleteLocalPost(post.id);
+      });
+    
       actions.appendChild(editBtn);
+      actions.appendChild(deleteBtn);
       card.appendChild(actions);
     }
 
@@ -671,6 +682,36 @@ function startEditingPost(postId) {
   createFeedback.textContent = "Editando publicación local.";
   postTitleInput.focus();
 }
+
+function deleteLocalPost(postId) {
+  const post = localPosts.find(item => item.id === postId);
+
+  if (!post || !currentUser || post.userId !== currentUser.id) {
+    createFeedback.textContent = "No tienes permiso para eliminar este post.";
+    return;
+  }
+
+  const confirmed = window.confirm("¿Deseas eliminar este post local?");
+  if (!confirmed) {
+    return;
+  }
+
+  localPosts = localPosts.filter(item => item.id !== postId);
+  saveStoredLocalPosts(localPosts);
+
+  if (editingPostId === postId) {
+    resetCreateForm();
+  }
+
+  createFeedback.textContent = "Post eliminado";
+
+  if (searchActive && searchInput.value.trim() !== "") {
+    searchPosts();
+  } else {
+    renderPosts(getVisiblePosts());
+  }
+}
+
 
 function animateSharedElements(sourceCard, postId) {
   if (!sourceCard) {
