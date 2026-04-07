@@ -249,12 +249,18 @@ function saveProfile() {
   const displayName = profileDisplayNameInput.value.trim();
   const bio = profileBioInput.value.trim();
 
+  if (displayName === "") {
+    profileFeedback.textContent = "Debes ingresar un nombre visible.";
+    profileDisplayNameInput.focus();
+    return;
+  }
+  
   if (displayName.length < 2) {
     profileFeedback.textContent = "El nombre visible debe tener al menos 2 caracteres.";
     profileDisplayNameInput.focus();
     return;
   }
-
+  
   if (bio.length > 180) {
     profileFeedback.textContent = "La biografía no puede exceder 180 caracteres.";
     profileBioInput.focus();
@@ -661,14 +667,26 @@ async function createPost() {
     return;
   }
 
+  if (title === "") {
+    createFeedback.textContent = "Debes escribir un título.";
+    postTitleInput.focus();
+    return;
+  }
+  
   if (title.length < 3) {
     createFeedback.textContent = "El título debe tener al menos 3 caracteres.";
     postTitleInput.focus();
     return;
   }
-
+  
   if (body === "") {
     createFeedback.textContent = "Escribe un mensaje antes de publicar.";
+    postInput.focus();
+    return;
+  }
+  
+  if (body.length < 5) {
+    createFeedback.textContent = "El contenido debe tener al menos 5 caracteres.";
     postInput.focus();
     return;
   }
@@ -959,12 +977,24 @@ if (loginForm) {
     const username = loginUsernameInput.value.trim();
     const password = loginPasswordInput.value.trim();
 
+    if (username === "") {
+      authFeedback.textContent = "Debes ingresar tu usuario.";
+      loginUsernameInput.focus();
+      return;
+    }
+    
     if (username.length < 3) {
       authFeedback.textContent = "El usuario debe tener al menos 3 caracteres.";
       loginUsernameInput.focus();
       return;
     }
-
+    
+    if (password === "") {
+      authFeedback.textContent = "Debes ingresar tu contraseña.";
+      loginPasswordInput.focus();
+      return;
+    }
+    
     if (password.length < 4) {
       authFeedback.textContent = "La contraseña debe tener al menos 4 caracteres.";
       loginPasswordInput.focus();
@@ -992,18 +1022,42 @@ if (registerForm) {
     const username = registerUsernameInput.value.trim();
     const password = registerPasswordInput.value.trim();
 
+    if (displayName === "") {
+      authFeedback.textContent = "Debes ingresar un nombre visible.";
+      registerNameInput.focus();
+      return;
+    }
+    
     if (displayName.length < 2) {
       authFeedback.textContent = "El nombre visible debe tener al menos 2 caracteres.";
       registerNameInput.focus();
       return;
     }
-
+    
+    if (username === "") {
+      authFeedback.textContent = "Debes crear un usuario.";
+      registerUsernameInput.focus();
+      return;
+    }
+    
     if (username.length < 3) {
       authFeedback.textContent = "El usuario debe tener al menos 3 caracteres.";
       registerUsernameInput.focus();
       return;
     }
-
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      authFeedback.textContent = "El usuario solo puede tener letras, números y guion bajo.";
+      registerUsernameInput.focus();
+      return;
+    }
+    
+    if (password === "") {
+      authFeedback.textContent = "Debes crear una contraseña.";
+      registerPasswordInput.focus();
+      return;
+    }
+    
     if (password.length < 4) {
       authFeedback.textContent = "La contraseña debe tener al menos 4 caracteres.";
       registerPasswordInput.focus();
