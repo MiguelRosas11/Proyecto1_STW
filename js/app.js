@@ -17,9 +17,18 @@ const searchType = document.getElementById("searchType");
 const clearBtn = document.getElementById("clearBtn");
 
 const authSection = document.getElementById("authSection");
+const loginTabBtn = document.getElementById("loginTabBtn");
+const registerTabBtn = document.getElementById("registerTabBtn");
+
 const loginForm = document.getElementById("loginForm");
 const loginUsernameInput = document.getElementById("loginUsernameInput");
 const loginPasswordInput = document.getElementById("loginPasswordInput");
+
+const registerForm = document.getElementById("registerForm");
+const registerNameInput = document.getElementById("registerNameInput");
+const registerUsernameInput = document.getElementById("registerUsernameInput");
+const registerPasswordInput = document.getElementById("registerPasswordInput");
+
 const authFeedback = document.getElementById("authFeedback");
 
 const postInput = document.getElementById("postInput");
@@ -657,6 +666,24 @@ clearBtn.addEventListener("click", () => {
   renderPosts(getAllPosts());
 });
 
+if (loginTabBtn && registerTabBtn) {
+  loginTabBtn.addEventListener("click", () => {
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+    loginTabBtn.classList.add("active-tab");
+    registerTabBtn.classList.remove("active-tab");
+    authFeedback.textContent = "";
+  });
+
+  registerTabBtn.addEventListener("click", () => {
+    registerForm.classList.remove("hidden");
+    loginForm.classList.add("hidden");
+    registerTabBtn.classList.add("active-tab");
+    loginTabBtn.classList.remove("active-tab");
+    authFeedback.textContent = "";
+  });
+}
+
 if (loginForm) {
   loginForm.addEventListener("submit", event => {
     event.preventDefault();
@@ -689,6 +716,50 @@ if (loginForm) {
     loginForm.reset();
   });
 }
+
+if (registerForm) {
+  registerForm.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const displayName = registerNameInput.value.trim();
+    const username = registerUsernameInput.value.trim();
+    const password = registerPasswordInput.value.trim();
+
+    if (displayName.length < 2) {
+      authFeedback.textContent = "El nombre visible debe tener al menos 2 caracteres.";
+      registerNameInput.focus();
+      return;
+    }
+
+    if (username.length < 3) {
+      authFeedback.textContent = "El usuario debe tener al menos 3 caracteres.";
+      registerUsernameInput.focus();
+      return;
+    }
+
+    if (password.length < 4) {
+      authFeedback.textContent = "La contraseña debe tener al menos 4 caracteres.";
+      registerPasswordInput.focus();
+      return;
+    }
+
+    const result = registerLocalUser({ displayName, username, password });
+
+    if (!result.ok) {
+      authFeedback.textContent = result.message;
+      return;
+    }
+
+    authFeedback.textContent = "Cuenta creada correctamente. Ya puedes iniciar sesión.";
+    registerForm.reset();
+
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+    loginTabBtn.classList.add("active-tab");
+    registerTabBtn.classList.remove("active-tab");
+  });
+}
+
 
 publishBtn.addEventListener("click", createPost);
 
