@@ -30,6 +30,10 @@ const registerUsernameInput = document.getElementById("registerUsernameInput");
 const registerPasswordInput = document.getElementById("registerPasswordInput");
 
 const authFeedback = document.getElementById("authFeedback");
+const sessionSection = document.getElementById("sessionSection");
+const sessionName = document.getElementById("sessionName");
+const sessionUsername = document.getElementById("sessionUsername");
+const logoutBtn = document.getElementById("logoutBtn");
 
 const postInput = document.getElementById("postInput");
 const publishBtn = document.getElementById("publishBtn");
@@ -88,7 +92,7 @@ function restoreSession() {
   const storedSession = getStoredSession();
 
   if (!storedSession) {
-    currentUser = null;
+    setCurrentUser(null);
     return;
   }
 
@@ -168,7 +172,27 @@ function setCurrentUser(user) {
   } else {
     clearStoredSession();
   }
+
+  updateSessionUI();
 }
+
+function updateSessionUI() {
+  if (!authSection || !sessionSection) {
+    return;
+  }
+
+  if (currentUser) {
+    authSection.classList.add("hidden");
+    sessionSection.classList.remove("hidden");
+
+    sessionName.textContent = currentUser.displayName;
+    sessionUsername.textContent = `@${currentUser.username}`;
+  } else {
+    authSection.classList.remove("hidden");
+    sessionSection.classList.add("hidden");
+  }
+}
+
 
 function showState(message) {
   postsContainer.innerHTML = "";
@@ -769,6 +793,12 @@ if (registerForm) {
   });
 }
 
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    setCurrentUser(null);
+    authFeedback.textContent = "Sesión cerrada correctamente.";
+  });
+}
 
 publishBtn.addEventListener("click", createPost);
 

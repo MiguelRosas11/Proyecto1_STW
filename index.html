@@ -73,6 +73,25 @@
         <div id="authFeedback"></div>
       </section>
 
+      <section id="sessionSection" class="session-section hidden">
+        <div class="mini-profile">
+          <div class="profile-avatar">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5zm0 2c-4.418 0-8 2.239-8 5v1c0 .552.448 1 1 1h14c.552 0 1-.448 1-1v-1c0-2.761-3.582-5-8-5z"/>
+            </svg>
+          </div>
+      
+          <div class="profile-name-box">
+            <label>Sesión actual</label>
+            <div id="sessionName" class="session-name">Usuario</div>
+            <div id="sessionUsername" class="session-username">@usuario</div>
+          </div>
+        </div>
+      
+        <button id="logoutBtn" type="button" class="danger-btn">Cerrar sesión</button>
+      </section>
+      
+
       <textarea id="postInput" placeholder="Escribe tu mensaje..."></textarea>
 
       <button id="publishBtn" type="button">Publicar</button>
