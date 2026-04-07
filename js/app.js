@@ -563,7 +563,8 @@ async function createPost() {
       isLocal: true
     });
     
-
+    saveStoredLocalPosts(localPosts);
+    
     postInput.value = "";
     createFeedback.textContent = "Post publicado";
 
