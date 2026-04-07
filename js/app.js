@@ -281,6 +281,18 @@ function initializeNextLocalId() {
   nextLocalId = maxApiId + 1;
 }
 
+function getVisiblePosts() {
+  const apiVisiblePosts = [...apiPosts];
+
+  if (!currentUser) {
+    return apiVisiblePosts;
+  }
+
+  const userLocalPosts = localPosts.filter(post => post.userId === currentUser.id);
+  return [...userLocalPosts, ...apiVisiblePosts];
+}
+
+
 function openDetail(post, sourceCard) {
   detailMeta.textContent = `Post #${post.id}`;
   detailAvatar.src = post.avatar || DEFAULT_AVATAR;
@@ -447,7 +459,7 @@ async function loadPosts() {
     localPosts = getStoredLocalPosts();
 
     initializeNextLocalId();
-    renderPosts(getAllPosts());
+    renderPosts(getVisiblePosts());
   } catch (error) {
     showState("Error cargando posts");
   }
@@ -459,7 +471,7 @@ async function searchPosts() {
 
   if (value === "") {
     searchActive = false;
-    renderPosts(getAllPosts());
+    renderPosts(getVisiblePosts());
     return;
   }
 
@@ -467,6 +479,8 @@ async function searchPosts() {
   showState("Buscando...");
 
   try {
+    const visiblePosts = getVisiblePosts();
+
     if (type === "id") {
       const numericValue = Number(value);
 
@@ -475,38 +489,28 @@ async function searchPosts() {
         return;
       }
 
-      const localMatches = localPosts.filter(post => post.id === numericValue);
-      const apiMatches = apiPosts.filter(post => post.id === numericValue);
-
-      renderPosts([...localMatches, ...apiMatches]);
+      const matches = visiblePosts.filter(post => post.id === numericValue);
+      renderPosts(matches);
       return;
     }
 
     const lowerValue = value.toLowerCase();
 
     if (type === "text") {
-      const localResults = localPosts.filter(post =>
+      const results = visiblePosts.filter(post =>
         post.body.toLowerCase().includes(lowerValue)
       );
 
-      const apiResults = apiPosts.filter(post =>
-        post.body.toLowerCase().includes(lowerValue)
-      );
-
-      renderPosts([...localResults, ...apiResults]);
+      renderPosts(results);
       return;
     }
 
     if (type === "author") {
-      const localResults = localPosts.filter(post =>
+      const results = visiblePosts.filter(post =>
         post.author.toLowerCase().includes(lowerValue)
       );
 
-      const apiResults = apiPosts.filter(post =>
-        post.author.toLowerCase().includes(lowerValue)
-      );
-
-      renderPosts([...localResults, ...apiResults]);
+      renderPosts(results);
       return;
     }
 
@@ -571,7 +575,7 @@ async function createPost() {
     if (searchActive && searchInput.value.trim() !== "") {
       await searchPosts();
     } else {
-      renderPosts(getAllPosts());
+      renderPosts(getVisiblePosts());
     }
   } catch (error) {
     createFeedback.textContent = "Error publicando";
@@ -703,7 +707,7 @@ searchBtn.addEventListener("click", searchPosts);
 clearBtn.addEventListener("click", () => {
   searchInput.value = "";
   searchActive = false;
-  renderPosts(getAllPosts());
+  renderPosts(getVisiblePosts());
 });
 
 if (loginTabBtn && registerTabBtn) {
