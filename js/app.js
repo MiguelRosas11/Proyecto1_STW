@@ -2,6 +2,12 @@ const API = "https://dummyjson.com/posts";
 const DEFAULT_AVATAR = "https://dummyjson.com/icon/user/80";
 const POST_PREVIEW_LIMIT = 160;
 
+const STORAGE_KEYS = {
+  users: "mini_blog_users",
+  session: "mini_blog_session",
+  posts: "mini_blog_local_posts"
+};
+
 const postsContainer = document.getElementById("postsContainer");
 const uiState = document.getElementById("uiState");
 
@@ -10,14 +16,47 @@ const searchBtn = document.getElementById("searchBtn");
 const searchType = document.getElementById("searchType");
 const clearBtn = document.getElementById("clearBtn");
 
-const profileNameInput = document.getElementById("profileNameInput");
+const authSection = document.getElementById("authSection");
+const loginTabBtn = document.getElementById("loginTabBtn");
+const registerTabBtn = document.getElementById("registerTabBtn");
+
+const loginForm = document.getElementById("loginForm");
+const loginUsernameInput = document.getElementById("loginUsernameInput");
+const loginPasswordInput = document.getElementById("loginPasswordInput");
+
+const registerForm = document.getElementById("registerForm");
+const registerNameInput = document.getElementById("registerNameInput");
+const registerUsernameInput = document.getElementById("registerUsernameInput");
+const registerPasswordInput = document.getElementById("registerPasswordInput");
+const postTitleInput = document.getElementById("postTitleInput");
+const cancelEditBtn = document.getElementById("cancelEditBtn");
+
+const authFeedback = document.getElementById("authFeedback");
+const sessionSection = document.getElementById("sessionSection");
+const sessionName = document.getElementById("sessionName");
+const sessionUsername = document.getElementById("sessionUsername");
+const logoutBtn = document.getElementById("logoutBtn");
+
 const postInput = document.getElementById("postInput");
 const publishBtn = document.getElementById("publishBtn");
 const createFeedback = document.getElementById("createFeedback");
+const homeViewBtn = document.getElementById("homeViewBtn");
+const profileViewBtn = document.getElementById("profileViewBtn");
 
+const listView = document.getElementById("listView");
+const profileView = document.getElementById("profileView");
+
+const profileEmptyState = document.getElementById("profileEmptyState");
+const profileForm = document.getElementById("profileForm");
+const profileDisplayNameInput = document.getElementById("profileDisplayNameInput");
+const profileBioInput = document.getElementById("profileBioInput");
+const profileUsernameText = document.getElementById("profileUsernameText");
+const profilePostCount = document.getElementById("profilePostCount");
+const profileFeedback = document.getElementById("profileFeedback");
+const profileLogoutBtn = document.getElementById("profileLogoutBtn");
 const detailView = document.getElementById("detailView");
 const backToPostsBtn = document.getElementById("backToPostsBtn");
-
+const detailTitle = document.getElementById("detailTitle");
 const detailMeta = document.getElementById("detailMeta");
 const detailAvatar = document.getElementById("detailAvatar");
 const detailAuthor = document.getElementById("detailAuthor");
@@ -34,6 +73,250 @@ let activeSourceCard = null;
 let nextLocalId = null;
 let currentPage = 1;
 let currentPosts = [];
+let currentUser = null;
+let editingPostId = null;
+let currentView = "home";
+
+
+function getStoredUsers() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.users)) || [];
+}
+
+function saveStoredUsers(users) {
+  localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
+}
+
+function getStoredSession() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.session)) || null;
+}
+
+function saveStoredSession(user) {
+  localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(user));
+}
+
+function clearStoredSession() {
+  localStorage.removeItem(STORAGE_KEYS.session);
+}
+
+function getStoredLocalPosts() {
+  return JSON.parse(localStorage.getItem(STORAGE_KEYS.posts)) || [];
+}
+
+function saveStoredLocalPosts(posts) {
+  localStorage.setItem(STORAGE_KEYS.posts, JSON.stringify(posts));
+}
+
+function restoreSession() {
+  const storedSession = getStoredSession();
+
+  if (!storedSession) {
+    setCurrentUser(null);
+    return;
+  }
+
+  setCurrentUser(storedSession);
+}
+
+function normalizeUsername(value) {
+  return value.trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function generateLocalUserId() {
+  const users = getStoredUsers();
+
+  const maxId = users.reduce((max, user) => {
+    return typeof user.id === "number" && user.id > max ? user.id : max;
+  }, 1000);
+
+  return maxId + 1;
+}
+
+function registerLocalUser({ displayName, username, password }) {
+  const users = getStoredUsers();
+  const normalizedUsername = normalizeUsername(username);
+
+  const alreadyExists = users.some(user => user.username === normalizedUsername);
+
+  if (alreadyExists) {
+    return {
+      ok: false,
+      message: "Ese usuario ya existe. Prueba con otro."
+    };
+  }
+
+  const newUser = {
+    id: generateLocalUserId(),
+    displayName: displayName.trim(),
+    username: normalizedUsername,
+    password: password,
+    bio: ""
+  };
+
+  users.push(newUser);
+  saveStoredUsers(users);
+
+  return {
+    ok: true,
+    user: newUser
+  };
+}
+
+function loginLocalUser(username, password) {
+  const users = getStoredUsers();
+  const normalizedUsername = normalizeUsername(username);
+
+  const foundUser = users.find(
+    user => user.username === normalizedUsername && user.password === password
+  );
+
+  if (!foundUser) {
+    return {
+      ok: false,
+      message: "Usuario o contraseña incorrectos."
+    };
+  }
+
+  return {
+    ok: true,
+    user: foundUser
+  };
+}
+
+function setCurrentUser(user) {
+  currentUser = user;
+
+  if (user) {
+    saveStoredSession(user);
+  } else {
+    clearStoredSession();
+  }
+
+  updateSessionUI();
+  updateProfileUI();
+}
+
+function updateSessionUI() {
+  if (!authSection || !sessionSection || !createPostSection) {
+    return;
+  }
+
+  if (currentUser) {
+    authSection.classList.add("hidden");
+    sessionSection.classList.remove("hidden");
+    createPostSection.classList.remove("hidden");
+
+    sessionName.textContent = currentUser.displayName;
+    sessionUsername.textContent = `@${currentUser.username}`;
+  } else {
+    authSection.classList.remove("hidden");
+    sessionSection.classList.add("hidden");
+    createPostSection.classList.add("hidden");
+  }
+}
+function getCurrentUserPosts() {
+  if (!currentUser) return [];
+  return localPosts.filter(post => post.userId === currentUser.id);
+}
+
+function updateStoredUser(updatedUser) {
+  const users = getStoredUsers().map(user =>
+    user.id === updatedUser.id ? updatedUser : user
+  );
+  saveStoredUsers(users);
+}
+
+function updateProfileUI() {
+  if (!currentUser) {
+    profileEmptyState.classList.remove("hidden");
+    profileForm.classList.add("hidden");
+    profilePostCount.textContent = "0";
+    return;
+  }
+
+  profileEmptyState.classList.add("hidden");
+  profileForm.classList.remove("hidden");
+  profileDisplayNameInput.value = currentUser.displayName || "";
+  profileBioInput.value = currentUser.bio || "";
+  profileUsernameText.textContent = `@${currentUser.username}`;
+  profilePostCount.textContent = String(getCurrentUserPosts().length);
+}
+
+function saveProfile() {
+  if (!currentUser) {
+    profileFeedback.textContent = "Debes iniciar sesión para editar tu perfil.";
+    return;
+  }
+
+  const displayName = profileDisplayNameInput.value.trim();
+  const bio = profileBioInput.value.trim();
+
+  if (displayName === "") {
+    profileFeedback.textContent = "Debes ingresar un nombre visible.";
+    profileDisplayNameInput.focus();
+    return;
+  }
+  
+  if (displayName.length < 2) {
+    profileFeedback.textContent = "El nombre visible debe tener al menos 2 caracteres.";
+    profileDisplayNameInput.focus();
+    return;
+  }
+  
+  if (bio.length > 180) {
+    profileFeedback.textContent = "La biografía no puede exceder 180 caracteres.";
+    profileBioInput.focus();
+    return;
+  }
+
+  const updatedUser = {
+    ...currentUser,
+    displayName,
+    bio
+  };
+  
+  localPosts = localPosts.map(post => {
+    if (post.userId === currentUser.id) {
+      return {
+        ...post,
+        author: displayName
+      };
+    }
+  
+    return post;
+  });
+  
+  saveStoredLocalPosts(localPosts);
+  
+  setCurrentUser(updatedUser);
+  updateStoredUser(updatedUser);
+  saveStoredSession(updatedUser);
+  updateProfileUI();
+  
+  if (searchActive && searchInput.value.trim() !== "") {
+    searchPosts();
+  } else {
+    renderPosts(getVisiblePosts());
+  }
+  
+  profileFeedback.textContent = "Perfil actualizado correctamente.";
+}
+
+function showView(view) {
+  currentView = view;
+
+  if (view === "profile") {
+    listView.classList.add("hidden");
+    profileView.classList.remove("hidden");
+    homeViewBtn.classList.remove("active-nav");
+    profileViewBtn.classList.add("active-nav");
+  } else {
+    profileView.classList.add("hidden");
+    listView.classList.remove("hidden");
+    profileViewBtn.classList.remove("active-nav");
+    homeViewBtn.classList.add("active-nav");
+  }
+}
+
 
 function showState(message) {
   postsContainer.innerHTML = "";
@@ -93,6 +376,7 @@ function normalizeApiPost(post, usersMap) {
 
   return {
     id: post.id,
+    title: post.title || "Post sin título",
     author: user
       ? `${user.firstName} ${user.lastName}`
       : `Usuario ${post.userId}`,
@@ -100,7 +384,9 @@ function normalizeApiPost(post, usersMap) {
       ? `@${user.username}`
       : `@user${post.userId}`,
     avatar: user?.image || DEFAULT_AVATAR,
-    body: post.body || ""
+    body: post.body || "",
+    userId: post.userId,
+    isLocal: false
   };
 }
 
@@ -120,6 +406,18 @@ function initializeNextLocalId() {
   nextLocalId = maxApiId + 1;
 }
 
+function getVisiblePosts() {
+  const apiVisiblePosts = [...apiPosts];
+
+  if (!currentUser) {
+    return apiVisiblePosts;
+  }
+
+  const userLocalPosts = localPosts.filter(post => post.userId === currentUser.id);
+  return [...userLocalPosts, ...apiVisiblePosts];
+}
+
+
 function openDetail(post, sourceCard) {
   detailMeta.textContent = `Post #${post.id}`;
   detailAvatar.src = post.avatar || DEFAULT_AVATAR;
@@ -127,7 +425,7 @@ function openDetail(post, sourceCard) {
   detailAuthor.textContent = post.author;
   detailUsername.textContent = post.username || "";
   detailBody.textContent = post.body || "";
-
+  detailTitle.textContent = post.title || "Post sin título";
   detailAvatar.dataset.shared = `avatar-${post.id}`;
   detailAuthor.dataset.shared = `author-${post.id}`;
   detailUsername.dataset.shared = `username-${post.id}`;
@@ -196,6 +494,10 @@ function renderPosts(posts) {
     username.className = "post-username";
     username.textContent = post.username || "";
 
+    const titleEl = document.createElement("div");
+    titleEl.className = "post-title";
+    titleEl.textContent = post.title || "Post sin título";
+
     const fullBody = post.body || "";
     const shouldTruncate = fullBody.length > POST_PREVIEW_LIMIT;
     const previewText = shouldTruncate
@@ -218,6 +520,14 @@ function renderPosts(posts) {
     header.appendChild(authorBox);
 
     card.appendChild(header);
+
+    if (post.isLocal) {
+      const badge = document.createElement("div");
+      badge.className = "post-badge";
+      badge.textContent = "Local";
+      card.appendChild(badge);
+    }
+    card.appendChild(titleEl);
     card.appendChild(message);
 
     if (shouldTruncate) {
@@ -233,6 +543,35 @@ function renderPosts(posts) {
       });
 
       card.appendChild(toggleBtn);
+    }
+
+    if (post.isLocal && currentUser && post.userId === currentUser.id) {
+      const actions = document.createElement("div");
+      actions.className = "post-actions";
+    
+      const editBtn = document.createElement("button");
+      editBtn.type = "button";
+      editBtn.className = "ghost-btn post-action-btn";
+      editBtn.textContent = "Editar";
+    
+      editBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        startEditingPost(post.id);
+      });
+    
+      const deleteBtn = document.createElement("button");
+      deleteBtn.type = "button";
+      deleteBtn.className = "danger-btn post-action-btn";
+      deleteBtn.textContent = "Eliminar";
+    
+      deleteBtn.addEventListener("click", event => {
+        event.stopPropagation();
+        deleteLocalPost(post.id);
+      });
+    
+      actions.appendChild(editBtn);
+      actions.appendChild(deleteBtn);
+      card.appendChild(actions);
     }
 
     card.addEventListener("click", () => {
@@ -283,8 +622,10 @@ async function loadPosts() {
       normalizeApiPost(post, usersMap)
     );
 
+    localPosts = getStoredLocalPosts();
+
     initializeNextLocalId();
-    renderPosts(getAllPosts());
+    renderPosts(getVisiblePosts());
   } catch (error) {
     showState("Error cargando posts");
   }
@@ -296,7 +637,7 @@ async function searchPosts() {
 
   if (value === "") {
     searchActive = false;
-    renderPosts(getAllPosts());
+    renderPosts(getVisiblePosts());
     return;
   }
 
@@ -304,6 +645,8 @@ async function searchPosts() {
   showState("Buscando...");
 
   try {
+    const visiblePosts = getVisiblePosts();
+
     if (type === "id") {
       const numericValue = Number(value);
 
@@ -312,38 +655,28 @@ async function searchPosts() {
         return;
       }
 
-      const localMatches = localPosts.filter(post => post.id === numericValue);
-      const apiMatches = apiPosts.filter(post => post.id === numericValue);
-
-      renderPosts([...localMatches, ...apiMatches]);
+      const matches = visiblePosts.filter(post => post.id === numericValue);
+      renderPosts(matches);
       return;
     }
 
     const lowerValue = value.toLowerCase();
 
     if (type === "text") {
-      const localResults = localPosts.filter(post =>
+      const results = visiblePosts.filter(post =>
         post.body.toLowerCase().includes(lowerValue)
       );
 
-      const apiResults = apiPosts.filter(post =>
-        post.body.toLowerCase().includes(lowerValue)
-      );
-
-      renderPosts([...localResults, ...apiResults]);
+      renderPosts(results);
       return;
     }
 
     if (type === "author") {
-      const localResults = localPosts.filter(post =>
+      const results = visiblePosts.filter(post =>
         post.author.toLowerCase().includes(lowerValue)
       );
 
-      const apiResults = apiPosts.filter(post =>
-        post.author.toLowerCase().includes(lowerValue)
-      );
-
-      renderPosts([...localResults, ...apiResults]);
+      renderPosts(results);
       return;
     }
 
@@ -354,18 +687,63 @@ async function searchPosts() {
 }
 
 async function createPost() {
-  const author = profileNameInput.value.trim();
+  const title = postTitleInput.value.trim();
   const body = postInput.value.trim();
 
-  if (author === "") {
-    createFeedback.textContent = "Debes ingresar un nombre de usuario antes de publicar.";
-    profileNameInput.focus();
+  if (!currentUser) {
+    createFeedback.textContent = "Debes iniciar sesión antes de publicar.";
     return;
   }
 
+  if (title === "") {
+    createFeedback.textContent = "Debes escribir un título.";
+    postTitleInput.focus();
+    return;
+  }
+  
+  if (title.length < 3) {
+    createFeedback.textContent = "El título debe tener al menos 3 caracteres.";
+    postTitleInput.focus();
+    return;
+  }
+  
   if (body === "") {
     createFeedback.textContent = "Escribe un mensaje antes de publicar.";
     postInput.focus();
+    return;
+  }
+  
+  if (body.length < 5) {
+    createFeedback.textContent = "El contenido debe tener al menos 5 caracteres.";
+    postInput.focus();
+    return;
+  }
+
+  if (editingPostId !== null) {
+    const targetIndex = localPosts.findIndex(
+      post => post.id === editingPostId && post.userId === currentUser.id
+    );
+
+    if (targetIndex === -1) {
+      createFeedback.textContent = "No se encontró el post a editar.";
+      return;
+    }
+
+    localPosts[targetIndex] = {
+      ...localPosts[targetIndex],
+      title,
+      body
+    };
+
+    saveStoredLocalPosts(localPosts);
+    resetCreateForm();
+    createFeedback.textContent = "Post actualizado";
+
+    if (searchActive && searchInput.value.trim() !== "") {
+      await searchPosts();
+    } else {
+      renderPosts(getVisiblePosts());
+    }
     return;
   }
 
@@ -378,7 +756,7 @@ async function createPost() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        title: "post",
+        title: title,
         body: body,
         userId: 1
       })
@@ -394,24 +772,88 @@ async function createPost() {
 
     localPosts.unshift({
       id: nextLocalId++,
-      author: author,
-      username: "@localuser",
+      title: title,
+      author: currentUser.displayName,
+      username: `@${currentUser.username}`,
       avatar: DEFAULT_AVATAR,
-      body: body
+      body: body,
+      userId: currentUser.id,
+      isLocal: true
     });
 
-    postInput.value = "";
+    saveStoredLocalPosts(localPosts);
+    resetCreateForm();
     createFeedback.textContent = "Post publicado";
 
     if (searchActive && searchInput.value.trim() !== "") {
       await searchPosts();
     } else {
-      renderPosts(getAllPosts());
+      renderPosts(getVisiblePosts());
     }
   } catch (error) {
     createFeedback.textContent = "Error publicando";
   }
 }
+
+function resetCreateForm() {
+  postTitleInput.value = "";
+  postInput.value = "";
+  editingPostId = null;
+  cancelEditBtn.classList.add("hidden");
+  publishBtn.textContent = "Publicar";
+  createFeedback.textContent = "";
+  createPostSection.classList.remove("editing-mode");
+}
+
+function startEditingPost(postId) {
+  const post = localPosts.find(
+    item => item.id === postId && currentUser && item.userId === currentUser.id
+  );
+
+  if (!post) {
+    createFeedback.textContent = "No se pudo editar este post.";
+    return;
+  }
+
+  editingPostId = post.id;
+  postTitleInput.value = post.title || "";
+  postInput.value = post.body || "";
+  cancelEditBtn.classList.remove("hidden");
+  publishBtn.textContent = "Guardar cambios";
+  createFeedback.textContent = "Editando publicación local.";
+  createPostSection.classList.add("editing-mode");
+  postTitleInput.focus();
+}
+
+function deleteLocalPost(postId) {
+  const post = localPosts.find(item => item.id === postId);
+
+  if (!post || !currentUser || post.userId !== currentUser.id) {
+    createFeedback.textContent = "No tienes permiso para eliminar este post.";
+    return;
+  }
+
+  const confirmed = window.confirm("¿Deseas eliminar este post local?");
+  if (!confirmed) {
+    return;
+  }
+
+  localPosts = localPosts.filter(item => item.id !== postId);
+  saveStoredLocalPosts(localPosts);
+
+  if (editingPostId === postId) {
+    resetCreateForm();
+  }
+
+  createFeedback.textContent = "Post eliminado";
+
+  if (searchActive && searchInput.value.trim() !== "") {
+    searchPosts();
+  } else {
+    renderPosts(getVisiblePosts());
+  }
+}
+
 
 function animateSharedElements(sourceCard, postId) {
   if (!sourceCard) {
@@ -538,21 +980,181 @@ searchBtn.addEventListener("click", searchPosts);
 clearBtn.addEventListener("click", () => {
   searchInput.value = "";
   searchActive = false;
-  renderPosts(getAllPosts());
+  renderPosts(getVisiblePosts());
 });
+
+if (loginTabBtn && registerTabBtn) {
+  loginTabBtn.addEventListener("click", () => {
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+    loginTabBtn.classList.add("active-tab");
+    registerTabBtn.classList.remove("active-tab");
+    authFeedback.textContent = "";
+  });
+
+  registerTabBtn.addEventListener("click", () => {
+    registerForm.classList.remove("hidden");
+    loginForm.classList.add("hidden");
+    registerTabBtn.classList.add("active-tab");
+    loginTabBtn.classList.remove("active-tab");
+    authFeedback.textContent = "";
+  });
+}
+
+if (loginForm) {
+  loginForm.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const username = loginUsernameInput.value.trim();
+    const password = loginPasswordInput.value.trim();
+
+    if (username === "") {
+      authFeedback.textContent = "Debes ingresar tu usuario.";
+      loginUsernameInput.focus();
+      return;
+    }
+    
+    if (username.length < 3) {
+      authFeedback.textContent = "El usuario debe tener al menos 3 caracteres.";
+      loginUsernameInput.focus();
+      return;
+    }
+    
+    if (password === "") {
+      authFeedback.textContent = "Debes ingresar tu contraseña.";
+      loginPasswordInput.focus();
+      return;
+    }
+    
+    if (password.length < 4) {
+      authFeedback.textContent = "La contraseña debe tener al menos 4 caracteres.";
+      loginPasswordInput.focus();
+      return;
+    }
+
+    const result = loginLocalUser(username, password);
+
+    if (!result.ok) {
+      authFeedback.textContent = result.message;
+      return;
+    }
+
+    setCurrentUser(result.user);
+    authFeedback.textContent = "Sesión iniciada correctamente.";
+    loginForm.reset();
+  });
+}
+
+if (registerForm) {
+  registerForm.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const displayName = registerNameInput.value.trim();
+    const username = registerUsernameInput.value.trim();
+    const password = registerPasswordInput.value.trim();
+
+    if (displayName === "") {
+      authFeedback.textContent = "Debes ingresar un nombre visible.";
+      registerNameInput.focus();
+      return;
+    }
+    
+    if (displayName.length < 2) {
+      authFeedback.textContent = "El nombre visible debe tener al menos 2 caracteres.";
+      registerNameInput.focus();
+      return;
+    }
+    
+    if (username === "") {
+      authFeedback.textContent = "Debes crear un usuario.";
+      registerUsernameInput.focus();
+      return;
+    }
+    
+    if (username.length < 3) {
+      authFeedback.textContent = "El usuario debe tener al menos 3 caracteres.";
+      registerUsernameInput.focus();
+      return;
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      authFeedback.textContent = "El usuario solo puede tener letras, números y guion bajo.";
+      registerUsernameInput.focus();
+      return;
+    }
+    
+    if (password === "") {
+      authFeedback.textContent = "Debes crear una contraseña.";
+      registerPasswordInput.focus();
+      return;
+    }
+    
+    if (password.length < 4) {
+      authFeedback.textContent = "La contraseña debe tener al menos 4 caracteres.";
+      registerPasswordInput.focus();
+      return;
+    }
+
+    const result = registerLocalUser({ displayName, username, password });
+
+    if (!result.ok) {
+      authFeedback.textContent = result.message;
+      return;
+    }
+
+    authFeedback.textContent = "Cuenta creada correctamente. Ya puedes iniciar sesión.";
+    registerForm.reset();
+
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+    loginTabBtn.classList.add("active-tab");
+    registerTabBtn.classList.remove("active-tab");
+  });
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    setCurrentUser(null);
+    authFeedback.textContent = "Sesión cerrada correctamente.";
+    showView("home");
+  });
+}
+
+if (profileLogoutBtn) {
+  profileLogoutBtn.addEventListener("click", () => {
+    setCurrentUser(null);
+    authFeedback.textContent = "Sesión cerrada correctamente.";
+    showView("home");
+  });
+}
+
+if (profileForm) {
+  profileForm.addEventListener("submit", event => {
+    event.preventDefault();
+    saveProfile();
+  });
+}
+
+if (homeViewBtn) {
+  homeViewBtn.addEventListener("click", () => showView("home"));
+}
+
+if (profileViewBtn) {
+  profileViewBtn.addEventListener("click", () => showView("profile"));
+}
+
+if (cancelEditBtn) {
+  cancelEditBtn.addEventListener("click", () => {
+    resetCreateForm();
+    createFeedback.textContent = "Edición cancelada.";
+  });
+}
 
 publishBtn.addEventListener("click", createPost);
 
 if (backToPostsBtn) {
   backToPostsBtn.addEventListener("click", closeDetail);
 }
-
-profileNameInput.addEventListener("keydown", event => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    postInput.focus();
-  }
-});
 
 postInput.addEventListener("keydown", event => {
   if (event.key === "Enter" && event.ctrlKey) {
@@ -570,4 +1172,6 @@ searchType.addEventListener("change", () => {
   }
 });
 
+restoreSession();
+showView("home");
 loadPosts();
