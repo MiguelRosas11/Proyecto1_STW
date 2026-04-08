@@ -130,5 +130,5 @@ git clone <repo-url>
 
 ## Video
 
-Video demonstration:  
+Video demonstration:  https://youtu.be/xbWqGXDq2vo
 
