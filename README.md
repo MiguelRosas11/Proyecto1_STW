@@ -1,10 +1,10 @@
-# LAB5 – Mini Blog Web Application with API Integration
+# PROYECTO 1 – Mini Blog Web Application (Based on LAB5)
 
-This project was developed for the course **Tecnologías y Sistemas Web** and corresponds to **Laboratory 5**.
+This project was developed for the course **Tecnologías y Sistemas Web** and corresponds to **Proyecto 1**, which is an extension and improvement of **Laboratory 5**.
 
-The objective of this laboratory was to build a small web application using **HTML, CSS, and JavaScript**, integrating **API consumption**, **DOM manipulation**, and proper handling of **UI states**.
+The objective of this project was to build a more complete web application using **HTML, CSS, and JavaScript**, integrating **API consumption**, **DOM manipulation**, and **UI state management**.
 
-The application simulates a **mini blog / bulletin board**, where users can create, view, and search posts.
+The application simulates a **mini blog system with basic user interaction**, allowing users to create, view, edit, and delete posts dynamically.
 
 ---
 
@@ -12,15 +12,17 @@ The application simulates a **mini blog / bulletin board**, where users can crea
 
 This application allows users to:
 
-- View a list of posts retrieved from a public API
+- View posts retrieved from an external API
 - Search posts by:
   - ID
-  - Text (using query parameters)
-- Create new posts using a form
-- See immediate feedback when performing actions
+  - Text
+- Create new posts
+- Edit existing posts
+- Delete posts
+- Simulate a basic user session (local)
 - Interact with a dynamic interface without reloading the page
 
-The application uses the **DummyJSON API** to simulate real-world API interactions.
+The system combines **external API data** with **locally managed data during runtime**.
 
 ---
 
@@ -29,17 +31,17 @@ The application uses the **DummyJSON API** to simulate real-world API interactio
 The following endpoints from DummyJSON were used:
 
 | Method | Endpoint | Description |
-|------|---------|------------|
+|--------|----------|------------|
 | GET | `/posts` | Retrieve a list of posts |
 | GET | `/posts/search?q=` | Search posts by text |
 | GET | `/posts/{id}` | Retrieve a specific post by ID |
 | POST | `/posts/add` | Create a new post |
 
-### Important Note
+### Important Notes
 
 - The API **does not persist created posts**
-- Created posts are stored locally in the application using a temporary array
-- This ensures that newly created posts are immediately visible in the UI
+- Created posts exist only during execution (runtime)
+- Refreshing the page resets locally created data
 
 ---
 
@@ -47,13 +49,13 @@ The following endpoints from DummyJSON were used:
 
 The application handles the following UI states:
 
-- **Idle** → Default state when content is displayed
-- **Loading** → When fetching data from the API
-- **Success** → When posts are successfully loaded or created
-- **Empty** → When no results are found
-- **Error** → When an API request fails
+- **Idle** → Default state when content is displayed  
+- **Loading** → When fetching data from the API  
+- **Success** → When posts are successfully loaded or modified  
+- **Empty** → When no results are found  
+- **Error** → When an API request fails  
 
-Each state provides **visual feedback to the user**.
+Each state provides clear **visual feedback to the user**.
 
 ---
 
@@ -61,29 +63,25 @@ Each state provides **visual feedback to the user**.
 
 The following features were implemented:
 
-- Mini blog layout with two main panels:
-  - Left panel → User profile and post creation
-  - Right panel → Search and post feed
-- Scroll limited only to the posts container
-- Dynamic rendering of posts using DOM manipulation
-- Search functionality using query parameters
-- Post creation using HTTP POST requests
-- Input validation before creating posts
-- Persistent username within the session
-- Local storage of created posts (temporary)
-- Smooth and minimalist UI design
+- Dynamic post feed rendering using DOM manipulation  
+- Search functionality (by ID and text)  
+- Post creation with validation  
+- Post editing functionality  
+- Post deletion functionality  
+- Real-time UI updates without page reload  
+- Scroll limited to the posts container  
+- Clean and structured layout  
 
 ---
 
-## Mini Profile System
+## User System (Local)
 
-The application includes a simple user profile:
+The application includes a simple **local user system**:
 
-- Avatar placeholder (default user icon)
-- Username input field
-- The username is required to create posts
-- The username persists while the session is active
-- Only the post message is cleared after publishing
+- Username input (login simulation)  
+- User required to create posts  
+- Username persists only during the session  
+- Posts are associated with the current user  
 
 ---
 
@@ -91,13 +89,13 @@ The application includes a simple user profile:
 
 The following UI/UX features were implemented:
 
-- Minimalist design with soft rounded corners
-- Blue accent buttons for consistency
-- Centered posts panel with limited width
-- Clean card-based layout for posts
-- Scroll only inside the posts container
-- Responsive spacing and alignment
-- Real-time DOM updates without page reload
+- Minimalist design  
+- Rounded UI components  
+- Consistent color palette (blue accents)  
+- Card-based post layout  
+- Centered content with controlled width  
+- Smooth transitions and interactions  
+- Scroll only inside the posts container  
 
 ---
 
@@ -105,19 +103,10 @@ The following UI/UX features were implemented:
 
 This project does not require a server or additional setup.
 
-1. Download or clone the repository:
+1. Clone the repository:
 
-   git clone <repo-url>
-
-2. Navigate to the project folder.
-
-3. Open the `index.html` file:
-
-   - Double click the file, or  
-   - Right click → Open with browser  
-
-The application will run directly in your browser.
-
+```bash
+git clone <repo-url>
 
 ---
 
@@ -132,7 +121,8 @@ The application will run directly in your browser.
 
 ## Author
 
-- Student: Miguel Rosas – 241274  
+- Student: Miguel Rosas – 241274
+- Student: Samuel Robledo - 241282
 - Course: Tecnologías y Sistemas Web  
 - Year: 2026  
 
@@ -141,4 +131,4 @@ The application will run directly in your browser.
 ## Video
 
 Video demonstration:  
-[https://youtu.be/NNMWfV-7baw](https://www.youtube.com/watch?v=NNMWfV-7baw)
+
